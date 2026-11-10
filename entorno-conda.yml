@@ -1,5 +1,7 @@
 # Entorno conda para el programa de diseño de zapatas aisladas (ACI 318-19)
-# Crear:   conda env create -f environment.yml
+# Solo para uso local. No se llama environment.yml para que Streamlit Cloud use
+# requirements.txt (pip), que instala mucho más rápido.
+# Crear:   conda env create -f entorno-conda.yml
 # Activar: conda activate zapatas
 name: zapatas
 channels:

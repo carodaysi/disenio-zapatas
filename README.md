@@ -55,7 +55,7 @@ clase. Puede usarse con una **interfaz gráfica de escritorio**, como **aplicaci
 ├── InputData01.xlsx                   # Datos de entrada (hoja "Tarea1")
 ├── Explicacion_Programa_Zapatas.docx  # Documento que explica el programa paso a paso
 ├── requirements.txt                   # Dependencias (pip)
-├── environment.yml                    # Entorno conda
+├── entorno-conda.yml                  # Entorno conda (uso local)
 ├── docs/img/                          # Capturas usadas en este README
 └── Resultados/                        # Salidas generadas por el programa
 ```
@@ -71,7 +71,7 @@ web necesita además `streamlit` (probado con 1.65). Las dos opciones siguientes
 ```bash
 git clone https://github.com/carodaysi/disenio-zapatas.git
 cd disenio-zapatas
-conda env create -f environment.yml
+conda env create -f entorno-conda.yml
 conda activate zapatas
 ```
 
