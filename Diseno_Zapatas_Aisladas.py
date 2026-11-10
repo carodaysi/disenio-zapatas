@@ -42,6 +42,11 @@
    se calculan con la presión neta qu − w (sin contarlo dos veces). Con contacto
    total W se anula y las solicitaciones son las mismas que con FZ sola.
 
+ Criterio (parámetro CRITERIO): "ACI" es el diseño por defecto. "CLASE" reproduce las
+   hipótesis del Excel de clase (d = h − rec, As,mín = 0.0018·b·d, barras a 15 cm,
+   vc1 = 1.1·√f'c, sin transferencia de momento) y sirve para validar el script contra
+   ese ejercicio; DIAMETRO_PUNTO permite imponer el diámetro elegido a mano en el Excel.
+
  Procedimiento para cada zapata:
    1. Presión de contacto última qu(x,y) para cada combinación, sin admitir
       tracciones en el suelo (contacto parcial resuelto numéricamente). Las
@@ -131,6 +136,22 @@ CONTACTO_TOTAL = 99.99  # [%] por debajo se considera pérdida de contacto parci
 TRASLADAR_CORTANTE = False
 N_MALLA = 200       # divisiones por lado de la malla de integración de presiones
 
+# --- Criterio de detallado y resistencia ------------------------------------
+# "ACI"  : criterio del programa (por defecto). d descuenta el diámetro de cada
+#          capa, As,mín = 0.0018·b·h, el armado cubre máx(As,req; As,mín) y el
+#          punzonamiento usa vc = 1.06·√f'c con transferencia de momento γv·Msc.
+# "CLASE": reproduce las hipótesis del Excel desarrollado en clase, para validar
+#          el script: d = h − REC en ambas direcciones, As,mín = 0.0018·b·d,
+#          barras a separación fija S_CLASE (n = B/s + 1), vc,1 = COEF_VC1_CLASE·√f'c
+#          y Vu de punzonamiento sin transferencia de momento.
+CRITERIO = "ACI"
+S_CLASE = 0.15                          # separación fija de las barras [m]
+COEF_VC1_CLASE = 1.1                    # coeficiente de vc,1 en el Excel de clase
+DIAMETROS_CLASE = [14, 16, 18, 20, 22, 25]   # diámetros [mm] en orden de preferencia
+# Opcional: diámetro impuesto en zapatas específicas {Point: Ø [mm]}, en cualquier
+# criterio (p. ej. para reproducir una elección manual del Excel). Vacío = automático.
+DIAMETRO_PUNTO = {}
+
 
 # =============================================================================
 # 1. FUNCIONES AUXILIARES
@@ -177,6 +198,15 @@ def _filas_excel(indices, maximo=8):
     return ", ".join(filas[:maximo]) + (" …" if len(filas) > maximo else "")
 
 
+def texto_criterio():
+    """Descripción corta del criterio de cálculo activo (memoria y Excel)."""
+    if CRITERIO == "CLASE":
+        return (f"CLASE (Excel de clase: d = h − rec, As,mín = 0.0018·b·d, barras @ "
+                f"{S_CLASE * 100:.0f} cm, vc1 = {COEF_VC1_CLASE:g}·√f'c, sin transferencia de momento)")
+    return ("ACI (d por capa, As,mín = 0.0018·b·h, vc1 = 1.06·√f'c, "
+            "punzonamiento con transferencia de momento)")
+
+
 def validar_parametros():
     """Revisa que los parámetros de la sección 0 tengan valores coherentes."""
     errores = []
@@ -197,11 +227,21 @@ def validar_parametros():
             errores.append(f"H_MAX = {H_MAX} m: debe darse en metros.")
     if not DIAMETROS or any(d <= 0 for d in DIAMETROS):
         errores.append("DIAMETROS debe contener al menos un diámetro positivo [mm].")
+    if CRITERIO not in ("ACI", "CLASE"):
+        errores.append(f'CRITERIO = "{CRITERIO}": debe ser "ACI" o "CLASE".')
+    elif CRITERIO == "CLASE":
+        if not 0.05 <= S_CLASE <= 0.45:
+            errores.append(f"S_CLASE = {S_CLASE} m: separación fuera de 0.05–0.45 m.")
+        if not DIAMETROS_CLASE or any(d <= 0 for d in DIAMETROS_CLASE):
+            errores.append("DIAMETROS_CLASE debe contener al menos un diámetro positivo [mm].")
     if GAMMA_S < 0 or FACTOR_PESO < 0:
         errores.append("GAMMA_S y FACTOR_PESO no pueden ser negativos.")
     for punto, h in H_MIN_PUNTO.items():
         if not 0 < h < H_MAX:
             errores.append(f"H_MIN_PUNTO[{punto}] = {h} m debe estar entre 0 y H_MAX.")
+    for punto, db in DIAMETRO_PUNTO.items():
+        if not isinstance(db, (int, float)) or not 6 <= db <= 40:
+            errores.append(f"DIAMETRO_PUNTO[{punto}] = {db}: diámetro en mm entre 6 y 40.")
     if errores:
         raise ErrorDatos("Parámetros no válidos:\n  - " + "\n  - ".join(errores))
 
@@ -480,9 +520,9 @@ def punzonamiento(campo, cx, cy, d):
     # Propiedad Jc de la sección crítica (columna interior, R8.4.4.2.3)
     Jc_y = d * b1 ** 3 / 6.0 + b1 * d ** 3 / 6.0 + d * b2 * b1 ** 2 / 2.0
     Jc_x = d * b2 ** 3 / 6.0 + b2 * d ** 3 / 6.0 + d * b1 * b2 ** 2 / 2.0
-    vu = (Vu / (bo * d)
-          + gv_y * Msc_y * (b1 / 2.0) / Jc_y
-          + gv_x * Msc_x * (b2 / 2.0) / Jc_x)
+    vu = Vu / (bo * d)
+    if CRITERIO == "ACI":   # el Excel de clase no incluye la transferencia de momento
+        vu += gv_y * Msc_y * (b1 / 2.0) / Jc_y + gv_x * Msc_x * (b2 / 2.0) / Jc_x
     return dict(Vu=Vu, vu=vu, bo=bo, b1=b1, b2=b2, Msc_x=Msc_x, Msc_y=Msc_y,
                 gv_x=gv_x, gv_y=gv_y)
 
@@ -532,7 +572,7 @@ def resistencia_cortante_1D(As, b, d):
 def resistencia_punzonamiento(cx, cy, d, bo):
     """φvc [tonf/m²] para cortante bidireccional, ACI Tabla 22.6.5.2 (mks)."""
     beta = max(cx, cy) / min(cx, cy)
-    vc = min(1.06,
+    vc = min(1.06 if CRITERIO == "ACI" else COEF_VC1_CLASE,
              0.53 * (1.0 + 2.0 / beta),
              0.27 * (2.0 + ALPHA_S * d / bo)) * LAMBDA_S * LAMBDA * math.sqrt(FC)
     return PHI_CORTE * vc * 10.0, vc
@@ -580,6 +620,9 @@ def distribuir_barras(As, ancho, db_mm, h):
     s_max = min(2.0 * h, 0.45)
     L = ancho - 2.0 * REC - db_mm / 1000.0
     n = max(math.ceil(As / Ab), math.ceil(L / s_max) + 1, 2)
+    if CRITERIO == "CLASE":
+        # Excel de clase: número de barras fijado por la separación, n = B/s + 1
+        n = max(n, math.floor(ancho / S_CLASE + 1e-9) + 1)
     s = L / (n - 1)
     return dict(n=n, db=db_mm, s=s, As=n * Ab, s_max=s_max)
 
@@ -621,7 +664,10 @@ def verificar(geo, combos, campos, h, db_mm):
     # La dirección con mayor momento va en la capa inferior (mayor d) y cada
     # dirección se revisa con su propio d, que en la capa superior es el más
     # desfavorable.
-    if Mu_x >= Mu_y:
+    # En el criterio CLASE se reproduce el Excel: d = h − REC en ambas direcciones.
+    if CRITERIO == "CLASE":
+        dx = dy = h - REC
+    elif Mu_x >= Mu_y:
         dx, dy = h - REC - dbm / 2.0, h - REC - 1.5 * dbm
     else:
         dx, dy = h - REC - 1.5 * dbm, h - REC - dbm / 2.0
@@ -643,8 +689,9 @@ def verificar(geo, combos, campos, h, db_mm):
                     (cy + dm) / 2.0 + abs(geo["ey"]) <= By / 2.0 + 1e-9)
     r.update(masa_x=masa_x, masa_y=masa_y, bloque=bloque, perimetro_ok=perimetro_ok)
 
-    As_min_x = RHO_MIN * By * 100 * h * 100
-    As_min_y = RHO_MIN * Bx * 100 * h * 100
+    # ACI 8.6.1.1: 0.0018·Ag (b·h). El Excel de clase la aplica sobre b·d.
+    As_min_x = RHO_MIN * By * 100 * (h if CRITERIO == "ACI" else dx) * 100
+    As_min_y = RHO_MIN * Bx * 100 * (h if CRITERIO == "ACI" else dy) * 100
     As_req_x = acero_flexion(Mu_x, By, dx)
     As_req_y = acero_flexion(Mu_y, Bx, dy)
     if As_req_x is None or As_req_y is None:
@@ -734,6 +781,24 @@ def verificar(geo, combos, campos, h, db_mm):
     return r
 
 
+def elegir_diametro_clase(geo, combos, campos, h, diametros):
+    """Criterio CLASE (Excel de clase): barras a separación fija S_CLASE; se toma el
+    primer diámetro cuyo número de barras n = B/s + 1 cubre máx(As,req; As,mín). Si
+    ninguno lo cubre, el último probado (con más barras). Si el resultado no cumple
+    cortante o punzonamiento, el peralte aumenta."""
+    n_fijo_x = math.floor(geo["By"] / S_CLASE + 1e-9) + 1
+    n_fijo_y = math.floor(geo["Bx"] / S_CLASE + 1e-9) + 1
+    r = None
+    for db_mm in diametros:
+        r = verificar(geo, combos, campos, h, db_mm)
+        if "bar_x" not in r:
+            continue
+        r["anclaje"] = revisar_anclaje(geo, r)
+        if r["bar_x"]["n"] == n_fijo_x and r["bar_y"]["n"] == n_fijo_y:
+            return r
+    return r
+
+
 def disenar_zapata(punto, datos):
     """Itera peralte h y diámetro de barra hasta cumplir todas las verificaciones."""
     f0 = datos.iloc[0]
@@ -747,6 +812,10 @@ def disenar_zapata(punto, datos):
     campos = None
     ultimo = None
     h_inicial = H_MIN_PUNTO.get(punto, H_MIN)
+    if punto in DIAMETRO_PUNTO:
+        diametros = [DIAMETRO_PUNTO[punto]]
+    else:
+        diametros = DIAMETROS_CLASE if CRITERIO == "CLASE" else DIAMETROS
     historial = []                      # (h, motivo) de los peraltes que no cumplen
     for h in np.arange(h_inicial, H_MAX + 1e-9, DH):
         h = round(float(h), 3)
@@ -760,21 +829,24 @@ def disenar_zapata(punto, datos):
         # ancla dentro del voladizo. Si ninguno se ancla así, se acepta el primero
         # que se ancla con el espaciamiento libre mínimo del ACI (25.2.1); y si
         # tampoco, el primero con s ≥ S_MIN (el anclaje queda reportado).
-        elegido = respaldo = ajustado = None
-        for db_mm in DIAMETROS:
-            r = verificar(geo, combos, campos, h, db_mm)
-            if "bar_x" not in r:
-                continue
-            s = min(r["bar_x"]["s"], r["bar_y"]["s"])
-            r["anclaje"] = revisar_anclaje(geo, r)
-            if s >= S_MIN:
-                respaldo = respaldo or r
-                if r["anclaje"]["cumple"]:
-                    elegido = r
-                    break
-            elif ajustado is None and r["anclaje"]["cumple"]:
-                ajustado = r
-        r = elegido or ajustado or respaldo or r
+        if CRITERIO == "CLASE":
+            r = elegir_diametro_clase(geo, combos, campos, h, diametros)
+        else:
+            elegido = respaldo = ajustado = None
+            for db_mm in diametros:
+                r = verificar(geo, combos, campos, h, db_mm)
+                if "bar_x" not in r:
+                    continue
+                s = min(r["bar_x"]["s"], r["bar_y"]["s"])
+                r["anclaje"] = revisar_anclaje(geo, r)
+                if s >= S_MIN:
+                    respaldo = respaldo or r
+                    if r["anclaje"]["cumple"]:
+                        elegido = r
+                        break
+                elif ajustado is None and r["anclaje"]["cumple"]:
+                    ajustado = r
+            r = elegido or ajustado or respaldo or r
         ultimo = (r, campos)
         # Con el armado elegido, si no cumple resistencia se aumenta el peralte
         if r["cumple"]:
@@ -893,14 +965,18 @@ def imprimir_zapata(r):
     log(f" Peralte adoptado h = {r['h']*100:.0f} cm,  Ø = {r['db']} mm")
     log(f" Verificación que controla h: {r['control_h']}")
     db = r["db"] / 10.0
-    capa_x = "inferior" if r["dx"] >= r["dy"] else "superior"
-    capa_y = "superior" if capa_x == "inferior" else "inferior"
-    log(f" dx = h − rec − {'0.5' if capa_x == 'inferior' else '1.5'}·db = {r['h']*100:.0f} − "
-        f"{REC*100:.1f} − {(0.5 if capa_x == 'inferior' else 1.5)*db:.1f} = {r['dx']*100:.1f} cm "
-        f"(barras paralelas a X, capa {capa_x})")
-    log(f" dy = h − rec − {'0.5' if capa_y == 'inferior' else '1.5'}·db = {r['h']*100:.0f} − "
-        f"{REC*100:.1f} − {(0.5 if capa_y == 'inferior' else 1.5)*db:.1f} = {r['dy']*100:.1f} cm "
-        f"(barras paralelas a Y, capa {capa_y})")
+    if CRITERIO == "CLASE":
+        log(f" dx = dy = h − rec = {r['h']*100:.0f} − {REC*100:.1f} = {r['dx']*100:.1f} cm "
+            "(criterio CLASE, igual que el Excel de clase)")
+    else:
+        capa_x = "inferior" if r["dx"] >= r["dy"] else "superior"
+        capa_y = "superior" if capa_x == "inferior" else "inferior"
+        log(f" dx = h − rec − {'0.5' if capa_x == 'inferior' else '1.5'}·db = {r['h']*100:.0f} − "
+            f"{REC*100:.1f} − {(0.5 if capa_x == 'inferior' else 1.5)*db:.1f} = {r['dx']*100:.1f} cm "
+            f"(barras paralelas a X, capa {capa_x})")
+        log(f" dy = h − rec − {'0.5' if capa_y == 'inferior' else '1.5'}·db = {r['h']*100:.0f} − "
+            f"{REC*100:.1f} − {(0.5 if capa_y == 'inferior' else 1.5)*db:.1f} = {r['dy']*100:.1f} cm "
+            f"(barras paralelas a Y, capa {capa_y})")
     log(f" d promedio = {r['d']*100:.1f} cm   (d ≥ 15 cm ✓)")
     log("")
     log(" 1) PRESIONES DE CONTACTO ÚLTIMAS")
@@ -925,7 +1001,8 @@ def imprimir_zapata(r):
             ("Y", g["Bx"], r["Mu_y"], r["As_req_y"], r["As_min_y"], r["bar_y"],
              r["phiMn_y"], r["eps_t_y"], r["combo_flex_y"])):
         log(f"   Barras paralelas a {e}: Mu = {Mu:.2f} t·m ({cmb}), ancho = {b:.2f} m")
-        log(f"     As,req = {Asr:.2f} cm²   As,min = 0.0018·b·h = {Asm:.2f} cm²")
+        log(f"     As,req = {Asr:.2f} cm²   As,min = 0.0018·b·{'h' if CRITERIO == 'ACI' else 'd'}"
+            f" = {Asm:.2f} cm²")
         log(f"     Armado: {texto_armado(bar)}  -> As = {bar['As']:.2f} cm²  "
             f"(s,max = {bar['s_max']*100:.0f} cm)")
         log(f"     φMn = {pM:.2f} t·m ≥ Mu  ->  D/C = {Mu/pM:.3f}   εt = {et:.4f} "
@@ -976,6 +1053,8 @@ def imprimir_cortantes(r):
         return
     gob = max(r["detalle"], key=lambda e: e["DC_punz"])
     log(f"   bo = {gob['bo']:.3f} m,  vc = {r['vc_p']:.2f} kg/cm²,  φvc = {r['phi_vc_p']:.1f} t/m²")
+    if CRITERIO == "CLASE":
+        log("   Criterio CLASE: vu = Vu/(bo·d), sin transferencia de momento (Msc solo informativo)")
     log(f"   {'Combo':<7}{'Vu[t]':>8}{'Msc,x':>8}{'Msc,y':>8}{'vu[t/m²]':>10}{'D/C':>7}")
     for e in r["detalle"]:
         log(f"   {e['Combo']:<7}{e['Vu_p']:8.2f}{e['Msc_x']:8.3f}{e['Msc_y']:8.3f}"
@@ -1183,12 +1262,15 @@ def exportar_excel(resultados, ruta, datos=None):
                       "h inicial [m]", "h máximo [m]", "Δh [m]", "h inicial por zapata [m]",
                       "Diámetros [mm]", "Separación mínima [m]",
                       "Incluir peso propio", "Factor peso propio", "γc [t/m³]", "γs [t/m³]",
-                      "Df [m]", "Traslado de cortante V·h", "Malla"],
+                      "Df [m]", "Traslado de cortante V·h", "Malla", "Criterio",
+                      "Diámetro por zapata [mm]"],
         "Valor": [FC, FY, REC, PHI_FLEXION, PHI_CORTE, LAMBDA, LAMBDA_S, ALPHA_S,
                   RHO_MIN, H_MIN, H_MAX, DH, str(H_MIN_PUNTO) if H_MIN_PUNTO else "—",
-                  ", ".join(map(str, DIAMETROS)), S_MIN,
+                  ", ".join(map(str, DIAMETROS_CLASE if CRITERIO == "CLASE" else DIAMETROS)),
+                  S_CLASE if CRITERIO == "CLASE" else S_MIN,
                   INCLUIR_PESO_PROPIO, FACTOR_PESO, GAMMA_C, GAMMA_S, DF,
-                  TRASLADAR_CORTANTE, f"{N_MALLA}x{N_MALLA}"]})
+                  TRASLADAR_CORTANTE, f"{N_MALLA}x{N_MALLA}", texto_criterio(),
+                  str(DIAMETRO_PUNTO) if DIAMETRO_PUNTO else "—"]})
     with pd.ExcelWriter(ruta, engine="openpyxl") as wr:
         pd.DataFrame(resumen).to_excel(wr, sheet_name="Resumen", index=False)
         pd.DataFrame(detalle).to_excel(wr, sheet_name="Detalle_Combos", index=False)
@@ -1220,6 +1302,9 @@ def main(progreso=None):
         f"traslado V·h = {TRASLADAR_CORTANTE}")
     log(f"Peso propio de zapata y relleno: "
         f"{f'incluido (factor {FACTOR_PESO:g}, Df = {DF:g} m)' if INCLUIR_PESO_PROPIO else 'ya incluido en las cargas'}")
+    log(f"Criterio: {texto_criterio()}")
+    if DIAMETRO_PUNTO:
+        log(f"Diámetro impuesto por zapata [mm]: {DIAMETRO_PUNTO}")
     log("")
 
     resultados = []

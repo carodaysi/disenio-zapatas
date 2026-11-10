@@ -2,6 +2,7 @@ DISEÑO DE ZAPATAS AISLADAS - ACI 318-19
 Archivo: InputData01.xlsx  |  78 filas, 13 zapatas, combinaciones: DCON1, DCON2, DCON3, DCON4, DCON5, DCON6
 f'c = 210 kg/cm²   fy = 4200 kg/cm²   rec = 7.5 cm   h = 40 a 150 cm cada 5 cm   traslado V·h = False
 Peso propio de zapata y relleno: incluido (factor 0.9, Df = 1.5 m)
+Criterio: ACI (d por capa, As,mín = 0.0018·b·h, vc1 = 1.06·√f'c, punzonamiento con transferencia de momento)
 
 ===============================================================================
  ZAPATA PUNTO 1   Bx = 1.10 m   By = 1.10 m   Columna 60 x 50 cm

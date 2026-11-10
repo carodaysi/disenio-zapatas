@@ -107,3 +107,26 @@ for p, H, ex, rv, rl in out:
     print(f"  combos programa: flex {rv['combo_flex_x']}/{rv['combo_flex_y']}  v1D {rv['DC_v1_x_combo']}/{rv['DC_v1_y_combo']}  punz {rv['DC_punz_combo']}")
     print(f"  Diseño libre del programa: h = {rl['h']*100:.0f} cm, {dz.texto_armado(rl['bar_x'])} / {dz.texto_armado(rl['bar_y'])}, "
           f"estado {rl['estado']}, gobierna {rl['gobierna'][0]} D/C {rl['gobierna'][1]:.3f}; {rl['control_h']}")
+
+# -----------------------------------------------------------------------------
+# Criterio CLASE: diseño completo del programa (h y armado iterados desde H_MIN)
+# con las hipótesis del Excel. P7: Ø16 elegido a mano en el Excel.
+# -----------------------------------------------------------------------------
+dz.CRITERIO = "CLASE"
+dz.DIAMETRO_PUNTO = {7: 16}
+dz.H_MIN_PUNTO = {}
+dz.validar_parametros()
+print("\n\n=== CRITERIO = \"CLASE\" (diseño iterado por el programa, DIAMETRO_PUNTO = {7: 16}) ===")
+cab = ["h [cm]", "Ø/n", "As [cm²]", "φMn [t·m]", "Vu1D y [t]", "φVc [t]", "Vu punz [t]", "φVc punz [t]"]
+print(f"{'':6s}" + "".join(f"{c:>23s}" for c in cab))
+for p in CARGAS:
+    ex = EXCEL[p]
+    r = dz.disenar_zapata(p, df[df["Point"] == p].reset_index(drop=True))
+    bo = r["detalle"][0]["bo"]
+    prog = [f"{r['h'] * 100:.0f}", f"Ø{r['db']}/{r['bar_x']['n']}", f"{r['bar_x']['As']:.2f}",
+            f"{r['phiMn_x']:.2f}", f"{r['Vu1_y']:.2f}", f"{r['phiVc_x']:.2f}", f"{r['Vu_p']:.2f}",
+            f"{r['phi_vc_p'] * bo * r['d']:.2f}"]
+    exc = [f"{CARGAS[p][1] * 100:.0f}", f"Ø{ex['db']}/{ex['n']}", f"{ex['As']:.2f}", f"{ex['phiMn']:.2f}",
+           f"{ex['Vu_y']:.2f}", f"{ex['phiVc']:.2f}", f"{ex['Vu_p']:.2f}", f(ex["phiVp"])]
+    print(f"P{p:<5d}" + "".join(f"{a + ' | ' + b:>23s}" for a, b in zip(exc, prog)))
+print("(cada celda: Excel | Programa)")

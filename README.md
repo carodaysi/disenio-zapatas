@@ -60,6 +60,8 @@ clase. Puede usarse con una **interfaz gráfica de escritorio**, como **aplicaci
 ├── app.py                             # Versión web (Streamlit)
 ├── .streamlit/config.toml             # Tema y límite de tamaño de archivos de la versión web
 ├── InputData01.xlsx                   # Datos de entrada (hoja "Tarea1")
+├── Validacion_Excel_Clase/            # Contraste con el Excel de clase (script, datos, capturas)
+├── generar_informe_pdf.py             # Genera el PDF de entrega de la Tarea 01
 ├── Explicacion_Programa_Zapatas.docx  # Documento que explica el programa paso a paso
 ├── requirements.txt                   # Dependencias (pip)
 ├── entorno-conda.yml                  # Entorno conda (uso local)
@@ -220,6 +222,9 @@ Están al inicio de `Diseno_Zapatas_Aisladas.py` (sección 0) y se pueden editar
 | Espaciamiento libre mínimo | `S_LIBRE_MIN` | 2.5 cm | ACI 25.2.1 |
 | Diámetros, en orden de preferencia | `DIAMETROS` | 12 … 25 mm, 10 mm al final | — |
 | Traslado del cortante a la base (V·h) | `TRASLADAR_CORTANTE` | `False` | Las cadenas toman el cortante |
+| Criterio de cálculo | `CRITERIO` | `"ACI"` | `"CLASE"` reproduce el Excel de clase (ver [Validación](#validación)) |
+| Separación fija / vc,1 / diámetros del criterio CLASE | `S_CLASE` / `COEF_VC1_CLASE` / `DIAMETROS_CLASE` | 15 cm / 1.1 / 14 … 25 mm | Excel de clase |
+| Diámetro impuesto por zapata (opcional) | `DIAMETRO_PUNTO` | vacío | p. ej. `{7: 16}` |
 
 Unidades internas: fuerzas en tonf, longitudes en m y presiones en tonf/m². Las resistencias usan
 las expresiones mks del ACI 318-19 (1 kg/cm² = 10 tonf/m²).
@@ -324,6 +329,31 @@ Se verificó a mano la zapata P7 (2.85 × 2.85 m, combinación DCON4, Pu = 237.5
 | vc de punzonamiento | 15.36 kg/cm² | 15.36 kg/cm² |
 
 ![Interfaz gráfica: detalle de la zapata P7](docs/img/interfaz_detalle_P7.png)
+
+### Contraste con el Excel de clase
+
+La carpeta `Validacion_Excel_Clase/` compara el programa con la hoja *Empotrado Art* del Excel
+desarrollado en clase (zapatas P3 a P7, mismas reacciones DCON). Ejecutar
+`python Validacion_Excel_Clase/comparar_excel_clase.py`.
+
+- **Criterio `"ACI"` (por defecto):** Mu y Vu de punzonamiento coinciden (Δ ≤ 0.7 %). El peralte
+  puede salir 5 cm mayor porque el programa descuenta el diámetro de cada capa en d, usa
+  As,mín = 0.0018·b·h (ACI 8.6.1.1), coloca solo el acero necesario, toma vc,1 = 1.06·√f'c
+  (0.33·√f'c en MPa) e incluye la transferencia de momento en el punzonamiento.
+- **Criterio `"CLASE"`:** con las hipótesis del Excel (d = h − 7.5 cm, As,mín = 0.0018·b·d,
+  barras a 15 cm, vc,1 = 1.1·√f'c, sin transferencia de momento) el programa itera h y el armado
+  y obtiene los mismos valores del Excel en las cinco zapatas:
+
+| Zapata | h [cm] | Barras | As [cm²] | φMn [t·m] | φVc 1D [t] | Vu punz. [t] |
+|---|---|---|---|---|---|---|
+| P3 (2.40 m) | 45 | 17 Ø14 | 26.17 | 35.83 | 29.60 | 100.95 (Excel 100.98) |
+| P4 (2.30 m) | 50 | 16 Ø14 | 24.63 | 38.40 | 30.65 | 114.83 (114.78) |
+| P5 (2.10 m) | 45 | 15 Ø14 | 23.09 | 31.60 | 25.97 | 94.61 (94.62) |
+| P6 (2.60 m) | 60 | 18 Ø14 | 27.71 | 53.67 | 39.82 | 143.24 (143.27) |
+| P7 (3.00 m) | 65 | 21 Ø16 | 42.22 | 89.13 | 53.57 | 204.17 (204.18) |
+
+En P7 el Excel usa Ø16, elegido a mano; se reproduce con `DIAMETRO_PUNTO = {7: 16}`. Las
+diferencias en Vu vienen de que las cargas del Excel se transcribieron con un decimal.
 
 ## Hipótesis y limitaciones
 

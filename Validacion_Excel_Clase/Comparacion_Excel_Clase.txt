@@ -123,3 +123,13 @@ bo [cm]                         450.00    443.60    -1.4
   D/C programa: flex 0.782/0.818  v1D 1.047/1.073  punz 0.722 (vu = 83.2 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 1.0726366491379877, 'DCON4')
   combos programa: flex DCON4/DCON4  v1D DCON4/DCON4  punz DCON4
   Diseño libre del programa: h = 70 cm, 25 Ø14 mm @ 11 cm / 25 Ø14 mm @ 11 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.918; Con h = 65 cm no cumple: Cortante 1D X (D/C = 1.046, DCON4); Cortante 1D Y (D/C = 1.078, DCON4)
+
+
+=== CRITERIO = "CLASE" (diseño iterado por el programa, DIAMETRO_PUNTO = {7: 16}) ===
+                       h [cm]                    Ø/n               As [cm²]              φMn [t·m]             Vu1D y [t]                φVc [t]            Vu punz [t]           φVc punz [t]
+P3                    45 | 45        Ø14/17 | Ø14/17          26.17 | 26.17          35.83 | 35.83          29.22 | 29.21          29.60 | 29.60        100.98 | 100.95        165.88 | 165.88
+P4                    50 | 50        Ø14/16 | Ø14/16          24.63 | 24.63          38.40 | 38.40          28.89 | 28.89          30.65 | 30.65        114.78 | 114.83             — | 198.16
+P5                    45 | 45        Ø14/15 | Ø14/15          23.09 | 23.09          31.60 | 31.60          24.58 | 24.57          25.97 | 25.97          94.62 | 94.61        165.88 | 165.88
+P6                    60 | 60        Ø14/18 | Ø14/18          27.71 | 27.71          53.67 | 53.67          34.90 | 34.87          39.82 | 39.82        143.27 | 143.24             — | 269.89
+P7                    65 | 65        Ø16/21 | Ø16/21          42.22 | 42.22          89.13 | 89.13          53.45 | 53.44          53.57 | 53.57        204.18 | 204.17             — | 309.35
+(cada celda: Excel | Programa)
