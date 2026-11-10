@@ -54,6 +54,49 @@ COLOR_FALLA = "#FDECEA"
 st.set_page_config(page_title="Diseño de zapatas aisladas — ACI 318-19",
                    page_icon="🏗️", layout="wide")
 
+AUTORA = "Daysi Velecela"
+PROGRAMA = "Maestría en Construcción de Estructuras Sismorresistentes — UPS"
+
+# Encabezado fijo en la parte superior de toda la página (sobre el panel lateral y
+# el contenido) y ocultamiento del botón "Deploy" y del menú de tres puntos
+# (respaldo de toolbarMode = "minimal" en .streamlit/config.toml).
+st.markdown(f"""
+<style>
+:root {{ --alto-encabezado: 3.2rem; }}
+[data-testid="stAppDeployButton"], [data-testid="stMainMenu"], footer {{ display: none !important; }}
+/* Toda la aplicación (panel lateral, barra de Streamlit y contenido) empieza debajo del encabezado */
+[data-testid="stAppViewContainer"] {{
+    top: var(--alto-encabezado) !important;
+    height: calc(100% - var(--alto-encabezado)) !important;
+}}
+.block-container {{ padding-top: 3.5rem; }}
+.encabezado {{
+    position: fixed; top: 0; left: 0; right: 0; height: var(--alto-encabezado);
+    z-index: 1000000; display: flex; justify-content: space-between; align-items: center;
+    gap: 1rem; padding: 0 1.5rem; background: #1F3A5F; color: #FFFFFF;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+}}
+.encabezado .autora {{ font-size: 1.15rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }}
+.encabezado .programa {{
+    font-size: 0.95rem; opacity: 0.92; min-width: 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}}
+@media (max-width: 640px) {{
+    :root {{ --alto-encabezado: 3.9rem; }}
+    .encabezado {{ padding: 0 0.9rem; }}
+    .encabezado .autora {{ font-size: 1rem; }}
+    .encabezado .programa {{
+        font-size: 0.75rem; line-height: 1.25; text-align: right;
+        white-space: normal; overflow: visible;
+    }}
+}}
+</style>
+<div class="encabezado">
+  <span class="autora">{AUTORA}</span>
+  <span class="programa">{PROGRAMA}</span>
+</div>
+""", unsafe_allow_html=True)
+
 
 # =============================================================================
 # Recursos compartidos entre usuarios
@@ -230,8 +273,7 @@ if "FC" not in st.session_state:
     restaurar_valores()
 
 st.title("Diseño de zapatas aisladas de hormigón armado")
-st.caption("Flexión, cortante unidireccional y punzonamiento según ACI 318-19 · "
-           "Maestría en Construcción de Estructuras Sismorresistentes — UPS")
+st.caption("Flexión, cortante unidireccional y punzonamiento según ACI 318-19")
 
 # --- Panel lateral: datos y parámetros ----------------------------------------
 with st.sidebar:

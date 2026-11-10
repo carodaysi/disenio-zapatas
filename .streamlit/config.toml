@@ -3,6 +3,10 @@
 base = "light"
 primaryColor = "#1F3A5F"
 
+[client]
+# Oculta el botón "Deploy" y el menú de tres puntos (con su "Made with Streamlit")
+toolbarMode = "minimal"
+
 [server]
 # Tamaño máximo del Excel que se puede subir [MB]
 maxUploadSize = 10
