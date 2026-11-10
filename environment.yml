@@ -11,4 +11,5 @@ dependencies:
   - matplotlib>=3.6
   - openpyxl>=3.1
   - tk
+  - streamlit>=1.50   # versión web (app.py)
   - spyder   # opcional: editor usado en el curso

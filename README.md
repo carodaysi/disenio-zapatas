@@ -3,7 +3,8 @@
 Procedimiento computacional reproducible, escrito en Python, para el diseño estructural de
 zapatas aisladas de hormigón armado. Verifica **flexión**, **cortante unidireccional** y
 **cortante bidireccional (punzonamiento)** según el ACI 318-19 y los criterios desarrollados en
-clase. Puede usarse con una **interfaz gráfica** o desde la consola.
+clase. Puede usarse con una **interfaz gráfica de escritorio**, como **aplicación web**
+(Streamlit) o desde la consola.
 
 > Maestría en Construcción de Estructuras Sismorresistentes — Universidad Politécnica Salesiana  
 > Asignatura: Diseño de Cimentaciones
@@ -18,6 +19,7 @@ clase. Puede usarse con una **interfaz gráfica** o desde la consola.
 - [Estructura del repositorio](#estructura-del-repositorio)
 - [Instalación](#instalación)
 - [Uso](#uso)
+- [Versión web (Streamlit)](#versión-web-streamlit)
 - [Datos de entrada](#datos-de-entrada)
 - [Parámetros de diseño](#parámetros-de-diseño)
 - [Resultados que genera](#resultados-que-genera)
@@ -39,14 +41,17 @@ clase. Puede usarse con una **interfaz gráfica** o desde la consola.
 - Revisa además el anclaje del refuerzo, el aplastamiento columna-zapata, el acero superior por
   pérdida de contacto y la distribución del acero en zapatas rectangulares.
 - Genera una memoria de cálculo paso a paso, un Excel de resultados y las figuras de cada zapata.
-- Incluye una interfaz gráfica (Tkinter) que valida los datos y permite revisar cada zapata.
+- Incluye una interfaz gráfica de escritorio (Tkinter) y una versión web (Streamlit). Ambas
+  validan los datos y permiten revisar cada zapata.
 
 ## Estructura del repositorio
 
 ```
 ├── Diseno_Zapatas_Aisladas.py         # Motor de cálculo (también se ejecuta solo, por consola)
-├── Interfaz_Zapatas.py                # Interfaz gráfica (Tkinter)
+├── Interfaz_Zapatas.py                # Interfaz gráfica de escritorio (Tkinter)
 ├── Ejecutar_Interfaz.bat              # Acceso directo para abrir la interfaz en Windows
+├── app.py                             # Versión web (Streamlit)
+├── .streamlit/config.toml             # Tema y límite de tamaño de archivos de la versión web
 ├── InputData01.xlsx                   # Datos de entrada (hoja "Tarea1")
 ├── Explicacion_Programa_Zapatas.docx  # Documento que explica el programa paso a paso
 ├── requirements.txt                   # Dependencias (pip)
@@ -58,7 +63,8 @@ clase. Puede usarse con una **interfaz gráfica** o desde la consola.
 ## Instalación
 
 Se necesita **Python 3.10** (probado con 3.10.22) y las librerías `numpy`, `pandas`, `matplotlib`
-y `openpyxl`. La interfaz usa `tkinter`, que viene incluido con Python.
+y `openpyxl`. La interfaz de escritorio usa `tkinter`, que viene incluido con Python. La versión
+web necesita además `streamlit` (probado con 1.65). Las dos opciones siguientes instalan todo.
 
 **Opción A — conda (recomendada, igual que en el curso):**
 
@@ -118,6 +124,41 @@ En Spyder: abre `Diseno_Zapatas_Aisladas.py` y presiona **F5**. Los parámetros 
 
 > Si `Resultados_Zapatas.xlsx` está abierto en Excel, ciérralo antes de ejecutar; de lo contrario
 > no se puede sobrescribir.
+
+## Versión web (Streamlit)
+
+`app.py` ofrece las mismas funciones que la interfaz de escritorio, pero en el navegador. Usa el
+mismo motor de cálculo, así que los resultados son idénticos.
+
+- **Datos:** se sube el Excel desde la computadora del usuario. Si no se sube ninguno, se usan los
+  datos de ejemplo (`InputData01.xlsx`), que también se pueden descargar como plantilla.
+- **Parámetros y opciones:** en la barra lateral, con la misma validación que la versión de
+  escritorio.
+- **Resultados:** pestañas *Datos de entrada*, *Resumen*, *Detalle por zapata*,
+  *Demanda / Capacidad* y *Memoria completa*.
+- **Descargas:** Excel de resultados, memoria de cálculo y un `.zip` con todo, incluidas las
+  figuras. En la web los archivos no se guardan en el servidor.
+- Si se cambian los datos o los parámetros después de diseñar, la página avisa que los
+  resultados mostrados son del diseño anterior.
+
+### Ejecutar en la computadora
+
+```bash
+streamlit run app.py
+```
+
+Se abre en el navegador en `http://localhost:8501`. Funciona sin internet.
+
+### Publicar en Streamlit Community Cloud (gratis)
+
+1. Entra a <https://share.streamlit.io> e inicia sesión con la cuenta de GitHub.
+2. Elige **Create app → Deploy a public app from GitHub**.
+3. Selecciona el repositorio `carodaysi/disenio-zapatas`, la rama `main` y el archivo `app.py`.
+4. En **Advanced settings** elige Python 3.10 (o superior) y presiona **Deploy**.
+
+Streamlit Cloud instala las dependencias de `requirements.txt` y publica la app en una dirección
+`https://….streamlit.app`. Cada `git push` a `main` la actualiza automáticamente. Si nadie la usa
+durante varios días se suspende, y el primer acceso tarda unos segundos en reactivarla.
 
 ## Datos de entrada
 

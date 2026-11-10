@@ -1,0 +1,12 @@
+# Configuración de la versión web (app.py)
+[theme]
+base = "light"
+primaryColor = "#1F3A5F"
+
+[server]
+# Tamaño máximo del Excel que se puede subir [MB]
+maxUploadSize = 10
+
+[browser]
+# No enviar estadísticas de uso a Streamlit
+gatherUsageStats = false
