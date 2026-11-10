@@ -1,0 +1,9 @@
+# Python
+__pycache__/
+*.pyc
+
+# Archivos temporales de Office
+~$*
+
+# Material de clase del docente (no es trabajo propio)
+Materia/

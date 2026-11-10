@@ -1,0 +1,720 @@
+DISEÑO DE ZAPATAS AISLADAS - ACI 318-19
+Archivo: InputData01.xlsx  |  78 filas, 13 zapatas, combinaciones: DCON1, DCON2, DCON3, DCON4, DCON5, DCON6
+f'c = 210 kg/cm²   fy = 4200 kg/cm²   rec = 7.5 cm   traslado V·h = False
+
+===============================================================================
+ ZAPATA PUNTO 1   Bx = 1.10 m   By = 1.10 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 40 cm,  Ø = 10 mm
+ dx = h − rec − 1.5·db = 40 − 7.5 − 1.5 = 31.0 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 40 − 7.5 − 0.5 = 32.0 cm (barras paralelas a Y, capa inferior)
+ d promedio = 31.5 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     12.06    -0.053     0.012       10.26      100.0  OK
+   DCON2     11.15    -0.055     0.013        9.52      100.0  OK
+   DCON3      5.20    -0.117    -1.411       12.02       75.8  OK
+   DCON4     26.31    -0.001     1.438       28.23      100.0  OK
+   DCON5      6.49     1.812    -0.001       14.53       74.0  OK
+   DCON6     18.65    -1.930     0.028       24.24      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 0.94 t·m (DCON4), ancho = 1.10 m
+     As,req = 0.80 cm²   As,min = 0.0018·b·h = 7.92 cm²
+     Armado: 11 Ø10 mm @ 9 cm  -> As = 8.64 cm²  (s,max = 45 cm)
+     φMn = 9.82 t·m ≥ Mu  ->  D/C = 0.095   εt = 0.0398 (controlada por tracción)
+   Barras paralelas a Y: Mu = 1.12 t·m (DCON6), ancho = 1.10 m
+     As,req = 0.92 cm²   As,min = 0.0018·b·h = 7.92 cm²
+     Armado: 11 Ø10 mm @ 9 cm  -> As = 8.64 cm²  (s,max = 45 cm)
+     φMn = 10.15 t·m ≥ Mu  ->  D/C = 0.110   εt = 0.0412 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (1.10 − 0.60)/2 = 25.0 cm,  d = 31.0 cm
+           d ≥ voladizo: la sección a d de la cara queda fuera de la zapata.
+           No hay cortante en una dirección -> hormigón en masa.
+   Dir. Y: voladizo = (1.10 − 0.50)/2 = 30.0 cm,  d = 32.0 cm
+           d ≥ voladizo: la sección a d de la cara queda fuera de la zapata.
+           No hay cortante en una dirección -> hormigón en masa.
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   No aplica: d ≥ voladizo en ambas direcciones; la superficie de falla a 45°
+   desde la cara de la columna sale por los bordes (hormigón en masa).
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 17.5 cm, ld = 43.9 cm, ldh = 15.9 cm -> Gancho estándar 90°
+   Aplastamiento: Pu,max = 26.31 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: Paralelo a X: 11 Ø10 mm @ 9 cm; paralelo a Y: 11 Ø10 mm @ 9 cm
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 2   Bx = 1.10 m   By = 1.10 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 40 cm,  Ø = 10 mm
+ dx = h − rec − 1.5·db = 40 − 7.5 − 1.5 = 31.0 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 40 − 7.5 − 0.5 = 32.0 cm (barras paralelas a Y, capa inferior)
+ d promedio = 31.5 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     11.96     0.056     0.010       10.18      100.0  OK
+   DCON2     11.05     0.059     0.011        9.45      100.0  OK
+   DCON3      5.50     0.003    -1.379       11.15       81.5  OK
+   DCON4     26.42     0.122     1.402       28.70      100.0  OK
+   DCON5     21.36     1.926     0.327       27.81      100.0  OK
+   DCON6      3.56    -1.800    -0.305       61.31       11.7  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 0.93 t·m (DCON4), ancho = 1.10 m
+     As,req = 0.80 cm²   As,min = 0.0018·b·h = 7.92 cm²
+     Armado: 11 Ø10 mm @ 9 cm  -> As = 8.64 cm²  (s,max = 45 cm)
+     φMn = 9.82 t·m ≥ Mu  ->  D/C = 0.095   εt = 0.0398 (controlada por tracción)
+   Barras paralelas a Y: Mu = 1.23 t·m (DCON5), ancho = 1.10 m
+     As,req = 1.02 cm²   As,min = 0.0018·b·h = 7.92 cm²
+     Armado: 11 Ø10 mm @ 9 cm  -> As = 8.64 cm²  (s,max = 45 cm)
+     φMn = 10.15 t·m ≥ Mu  ->  D/C = 0.121   εt = 0.0412 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (1.10 − 0.60)/2 = 25.0 cm,  d = 31.0 cm
+           d ≥ voladizo: la sección a d de la cara queda fuera de la zapata.
+           No hay cortante en una dirección -> hormigón en masa.
+   Dir. Y: voladizo = (1.10 − 0.50)/2 = 30.0 cm,  d = 32.0 cm
+           d ≥ voladizo: la sección a d de la cara queda fuera de la zapata.
+           No hay cortante en una dirección -> hormigón en masa.
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   No aplica: d ≥ voladizo en ambas direcciones; la superficie de falla a 45°
+   desde la cara de la columna sale por los bordes (hormigón en masa).
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 17.5 cm, ld = 43.9 cm, ldh = 15.9 cm -> Gancho estándar 90°
+   Aplastamiento: Pu,max = 26.42 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: Paralelo a X: 11 Ø10 mm @ 9 cm; paralelo a Y: 11 Ø10 mm @ 9 cm
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 3   Bx = 2.60 m   By = 2.60 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 50 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 50 − 7.5 − 1.8 = 40.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 50 − 7.5 − 0.6 = 41.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 41.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     59.11    -0.022     0.010        8.76      100.0  OK
+   DCON2     61.78    -0.028     0.013        9.15      100.0  OK
+   DCON3     25.20    -0.091    -1.196        4.17      100.0  OK
+   DCON4    106.91     0.035     1.222       16.24      100.0  OK
+   DCON5     13.57     1.745    -0.263        2.69      100.0  OK
+   DCON6    118.54    -1.802     0.289       18.25      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 22.89 t·m (DCON6), ancho = 2.60 m
+     As,req = 15.13 cm²   As,min = 0.0018·b·h = 23.40 cm²
+     Armado: 21 Ø12 mm @ 12 cm  -> As = 23.75 cm²  (s,max = 45 cm)
+     φMn = 35.57 t·m ≥ Mu  ->  D/C = 0.643   εt = 0.0453 (controlada por tracción)
+   Barras paralelas a Y: Mu = 25.78 t·m (DCON6), ancho = 2.60 m
+     As,req = 16.57 cm²   As,min = 0.0018·b·h = 23.40 cm²
+     Armado: 21 Ø12 mm @ 12 cm  -> As = 23.75 cm²  (s,max = 45 cm)
+     φMn = 36.65 t·m ≥ Mu  ->  D/C = 0.703   εt = 0.0467 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.60 − 0.60)/2 = 100.0 cm,  d = 40.7 cm
+           La sección a d queda 59.3 cm dentro del voladizo.
+           ρw = 0.00224, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.02 kg/cm², φVc = 31.92 t
+           D/C máx = 0.851 (DCON6)
+   Dir. Y: voladizo = (2.60 − 0.50)/2 = 105.0 cm,  d = 41.9 cm
+           La sección a d queda 63.1 cm dentro del voladizo.
+           ρw = 0.00218, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.98 kg/cm², φVc = 32.55 t
+           D/C máx = 0.907 (DCON6)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 3.852 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     51.02   0.022   0.010     32.10  0.279
+   DCON2     53.33   0.028   0.013     33.55  0.291
+   DCON3     21.75   0.089   1.171     14.62  0.127
+   DCON4     92.28   0.034   1.197     58.94  0.512
+   DCON5     11.71   1.716   0.258      8.84  0.077
+   DCON6    102.32   1.772   0.283     65.85  0.572
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 92.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 118.54 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 4   Bx = 2.30 m   By = 2.30 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 55 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 55 − 7.5 − 1.8 = 45.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 55 − 7.5 − 0.6 = 46.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 46.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     98.66    -0.027     0.019       18.67      100.0  OK
+   DCON2    108.51    -0.030     0.026       20.54      100.0  OK
+   DCON3     87.40    -0.093    -1.250       17.18      100.0  OK
+   DCON4    139.85     0.030     1.300       27.09      100.0  OK
+   DCON5    121.70     1.902     0.011       23.95      100.0  OK
+   DCON6    105.55    -1.965     0.039       20.94      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 22.37 t·m (DCON4), ancho = 2.30 m
+     As,req = 13.14 cm²   As,min = 0.0018·b·h = 22.77 cm²
+     Armado: 21 Ø12 mm @ 10 cm  -> As = 23.75 cm²  (s,max = 45 cm)
+     φMn = 39.94 t·m ≥ Mu  ->  D/C = 0.560   εt = 0.0450 (controlada por tracción)
+   Barras paralelas a Y: Mu = 24.64 t·m (DCON4), ancho = 2.30 m
+     As,req = 14.11 cm²   As,min = 0.0018·b·h = 22.77 cm²
+     Armado: 21 Ø12 mm @ 10 cm  -> As = 23.75 cm²  (s,max = 45 cm)
+     φMn = 41.01 t·m ≥ Mu  ->  D/C = 0.601   εt = 0.0462 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.30 − 0.60)/2 = 85.0 cm,  d = 45.7 cm
+           La sección a d queda 39.3 cm dentro del voladizo.
+           ρw = 0.00226, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.03 kg/cm², φVc = 31.78 t
+           D/C máx = 0.767 (DCON4)
+   Dir. Y: voladizo = (2.30 − 0.50)/2 = 90.0 cm,  d = 46.9 cm
+           La sección a d queda 43.1 cm dentro del voladizo.
+           ρw = 0.00220, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.00 kg/cm², φVc = 32.33 t
+           D/C máx = 0.811 (DCON4)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.052 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     79.57   0.026   0.018     42.44  0.368
+   DCON2     87.51   0.029   0.025     46.68  0.405
+   DCON3     70.49   0.090   1.198     38.35  0.333
+   DCON4    112.79   0.029   1.246     60.89  0.529
+   DCON5     98.15   1.837   0.011     53.42  0.464
+   DCON6     85.12   1.898   0.037     46.53  0.404
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 77.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 139.85 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 5   Bx = 2.10 m   By = 2.10 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 50 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 50 − 7.5 − 1.8 = 40.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 50 − 7.5 − 0.6 = 41.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 41.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     66.49     0.054     0.006       15.12      100.0  OK
+   DCON2     70.04     0.065     0.009       15.93      100.0  OK
+   DCON3     48.91     0.003    -1.207       11.87      100.0  OK
+   DCON4    100.38     0.128     1.224       23.64      100.0  OK
+   DCON5    117.32     1.821     0.340       28.00      100.0  OK
+   DCON6     31.97    -1.689    -0.323        8.55      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 15.81 t·m (DCON5), ancho = 2.10 m
+     As,req = 10.43 cm²   As,min = 0.0018·b·h = 18.90 cm²
+     Armado: 17 Ø12 mm @ 12 cm  -> As = 19.23 cm²  (s,max = 45 cm)
+     φMn = 28.80 t·m ≥ Mu  ->  D/C = 0.549   εt = 0.0452 (controlada por tracción)
+   Barras paralelas a Y: Mu = 18.47 t·m (DCON5), ancho = 2.10 m
+     As,req = 11.85 cm²   As,min = 0.0018·b·h = 18.90 cm²
+     Armado: 17 Ø12 mm @ 12 cm  -> As = 19.23 cm²  (s,max = 45 cm)
+     φMn = 29.67 t·m ≥ Mu  ->  D/C = 0.623   εt = 0.0466 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.10 − 0.60)/2 = 75.0 cm,  d = 40.7 cm
+           La sección a d queda 34.3 cm dentro del voladizo.
+           ρw = 0.00225, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.03 kg/cm², φVc = 25.80 t
+           D/C máx = 0.748 (DCON5)
+   Dir. Y: voladizo = (2.10 − 0.50)/2 = 80.0 cm,  d = 41.9 cm
+           La sección a d queda 38.1 cm dentro del voladizo.
+           ρw = 0.00219, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.99 kg/cm², φVc = 26.31 t
+           D/C máx = 0.838 (DCON5)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 3.852 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     52.55   0.052   0.006     33.07  0.287
+   DCON2     55.35   0.062   0.009     34.85  0.302
+   DCON3     38.65   0.003   1.148     25.16  0.218
+   DCON4     79.33   0.123   1.164     50.83  0.441
+   DCON5     92.72   1.749   0.323     59.83  0.519
+   DCON6     25.27   1.622   0.307     17.32  0.150
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 67.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 117.32 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 6   Bx = 2.60 m   By = 2.60 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 60 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 60 − 7.5 − 1.8 = 50.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 60 − 7.5 − 0.6 = 51.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 51.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     83.29    -0.037    -0.015       12.34      100.0  OK
+   DCON2     89.34    -0.048    -0.019       13.24      100.0  OK
+   DCON3     16.27    -0.045    -1.357        2.89      100.0  OK
+   DCON4    172.74    -0.049     1.320       26.02      100.0  OK
+   DCON5     31.81     2.059    -0.317        5.52      100.0  OK
+   DCON6    157.21    -2.153     0.280       24.09      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 33.65 t·m (DCON4), ancho = 2.60 m
+     As,req = 17.85 cm²   As,min = 0.0018·b·h = 28.08 cm²
+     Armado: 25 Ø12 mm @ 10 cm  -> As = 28.27 cm²  (s,max = 45 cm)
+     φMn = 52.82 t·m ≥ Mu  ->  D/C = 0.637   εt = 0.0475 (controlada por tracción)
+   Barras paralelas a Y: Mu = 36.64 t·m (DCON4), ancho = 2.60 m
+     As,req = 18.99 cm²   As,min = 0.0018·b·h = 28.08 cm²
+     Armado: 25 Ø12 mm @ 10 cm  -> As = 28.27 cm²  (s,max = 45 cm)
+     φMn = 54.10 t·m ≥ Mu  ->  D/C = 0.677   εt = 0.0487 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.60 − 0.60)/2 = 100.0 cm,  d = 50.7 cm
+           La sección a d queda 49.3 cm dentro del voladizo.
+           ρw = 0.00214, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.96 kg/cm², φVc = 39.17 t
+           D/C máx = 0.848 (DCON4)
+   Dir. Y: voladizo = (2.60 − 0.50)/2 = 105.0 cm,  d = 51.9 cm
+           La sección a d queda 53.1 cm dentro del voladizo.
+           ρw = 0.00210, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.93 kg/cm², φVc = 39.79 t
+           D/C máx = 0.887 (DCON4)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.252 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     69.40   0.036   0.015     31.84  0.276
+   DCON2     74.44   0.047   0.018     34.16  0.296
+   DCON3     13.56   0.044   1.316      6.88  0.060
+   DCON4    143.93   0.048   1.280     66.64  0.578
+   DCON5     26.50   2.007   0.307     13.28  0.115
+   DCON6    130.99   2.098   0.271     61.21  0.531
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 92.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 172.74 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 7   Bx = 2.85 m   By = 2.85 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 70 cm,  Ø = 14 mm
+ dx = h − rec − 1.5·db = 70 − 7.5 − 2.1 = 60.4 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 70 − 7.5 − 0.7 = 61.8 cm (barras paralelas a Y, capa inferior)
+ d promedio = 61.1 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1    134.46    -0.017    -0.025       16.56      100.0  OK
+   DCON2    152.52    -0.022    -0.031       18.79      100.0  OK
+   DCON3     77.99    -0.023    -1.311        9.95      100.0  OK
+   DCON4    237.52    -0.020     1.249       29.57      100.0  OK
+   DCON5    175.45     2.264    -0.036       22.20      100.0  OK
+   DCON6    140.06    -2.308    -0.027       17.85      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 53.17 t·m (DCON4), ancho = 2.85 m
+     As,req = 23.67 cm²   As,min = 0.0018·b·h = 35.91 cm²
+     Armado: 24 Ø14 mm @ 11 cm  -> As = 36.95 cm²  (s,max = 45 cm)
+     φMn = 82.22 t·m ≥ Mu  ->  D/C = 0.647   εt = 0.0475 (controlada por tracción)
+   Barras paralelas a Y: Mu = 57.54 t·m (DCON4), ancho = 2.85 m
+     As,req = 25.05 cm²   As,min = 0.0018·b·h = 35.91 cm²
+     Armado: 24 Ø14 mm @ 11 cm  -> As = 36.95 cm²  (s,max = 45 cm)
+     φMn = 84.18 t·m ≥ Mu  ->  D/C = 0.684   εt = 0.0487 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.85 − 0.60)/2 = 112.5 cm,  d = 60.4 cm
+           La sección a d queda 52.1 cm dentro del voladizo.
+           ρw = 0.00215, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.96 kg/cm², φVc = 51.16 t
+           D/C máx = 0.856 (DCON4)
+   Dir. Y: voladizo = (2.85 − 0.50)/2 = 117.5 cm,  d = 61.8 cm
+           La sección a d queda 55.7 cm dentro del voladizo.
+           ρw = 0.00210, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.93 kg/cm², φVc = 51.95 t
+           D/C máx = 0.894 (DCON4)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.644 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1    112.19   0.017   0.024     39.55  0.343
+   DCON2    127.26   0.021   0.030     44.87  0.389
+   DCON3     65.07   0.022   1.272     23.38  0.203
+   DCON4    198.18   0.019   1.212     70.26  0.610
+   DCON5    146.39   2.207   0.035     52.35  0.454
+   DCON6    116.86   2.250   0.026     41.96  0.364
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 105.0 cm, ld = 61.5 cm, ldh = 26.3 cm -> Barra recta
+   Aplastamiento: Pu,max = 237.52 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 8   Bx = 2.50 m   By = 2.50 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 60 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 60 − 7.5 − 1.8 = 50.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 60 − 7.5 − 0.6 = 51.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 51.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1    110.23     0.058     0.016       17.67      100.0  OK
+   DCON2    123.38     0.075     0.022       19.78      100.0  OK
+   DCON3    146.25     0.070    -1.131       23.86      100.0  OK
+   DCON4    110.33     0.078     1.173       18.13      100.0  OK
+   DCON5    171.04     2.171     0.328       28.33      100.0  OK
+   DCON6     85.55    -2.023    -0.286       14.57      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 30.98 t·m (DCON5), ancho = 2.50 m
+     As,req = 16.41 cm²   As,min = 0.0018·b·h = 27.00 cm²
+     Armado: 24 Ø12 mm @ 10 cm  -> As = 27.14 cm²  (s,max = 45 cm)
+     φMn = 50.71 t·m ≥ Mu  ->  D/C = 0.611   εt = 0.0476 (controlada por tracción)
+   Barras paralelas a Y: Mu = 34.97 t·m (DCON5), ancho = 2.50 m
+     As,req = 18.12 cm²   As,min = 0.0018·b·h = 27.00 cm²
+     Armado: 24 Ø12 mm @ 10 cm  -> As = 27.14 cm²  (s,max = 45 cm)
+     φMn = 51.94 t·m ≥ Mu  ->  D/C = 0.673   εt = 0.0488 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.50 − 0.60)/2 = 95.0 cm,  d = 50.7 cm
+           La sección a d queda 44.3 cm dentro del voladizo.
+           ρw = 0.00214, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.96 kg/cm², φVc = 37.64 t
+           D/C máx = 0.808 (DCON5)
+   Dir. Y: voladizo = (2.50 − 0.50)/2 = 100.0 cm,  d = 51.9 cm
+           La sección a d queda 48.1 cm dentro del voladizo.
+           ρw = 0.00209, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.93 kg/cm², φVc = 38.24 t
+           D/C máx = 0.882 (DCON5)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.252 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     90.35   0.056   0.015     41.45  0.360
+   DCON2    101.12   0.073   0.021     46.41  0.403
+   DCON3    119.87   0.068   1.091     55.52  0.482
+   DCON4     90.43   0.076   1.131     42.05  0.365
+   DCON5    140.19   2.107   0.316     65.45  0.568
+   DCON6     70.12   1.963   0.276     33.24  0.288
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 87.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 171.04 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 9   Bx = 2.50 m   By = 2.50 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 55 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 55 − 7.5 − 1.8 = 45.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 55 − 7.5 − 0.6 = 46.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 46.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     84.74    -0.039     0.003       13.57      100.0  OK
+   DCON2     91.23    -0.050     0.005       14.62      100.0  OK
+   DCON3    162.85    -0.018    -1.342       26.58      100.0  OK
+   DCON4     29.87    -0.080     1.351        5.33      100.0  OK
+   DCON5     42.67     2.232    -0.294        7.80      100.0  OK
+   DCON6    150.05    -2.330     0.303       25.02      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 29.83 t·m (DCON3), ancho = 2.50 m
+     As,req = 17.59 cm²   As,min = 0.0018·b·h = 24.75 cm²
+     Armado: 22 Ø12 mm @ 11 cm  -> As = 24.88 cm²  (s,max = 45 cm)
+     φMn = 41.88 t·m ≥ Mu  ->  D/C = 0.712   εt = 0.0468 (controlada por tracción)
+   Barras paralelas a Y: Mu = 32.58 t·m (DCON3), ancho = 2.50 m
+     As,req = 18.73 cm²   As,min = 0.0018·b·h = 24.75 cm²
+     Armado: 22 Ø12 mm @ 11 cm  -> As = 24.88 cm²  (s,max = 45 cm)
+     φMn = 43.01 t·m ≥ Mu  ->  D/C = 0.757   εt = 0.0481 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.50 − 0.60)/2 = 95.0 cm,  d = 45.7 cm
+           La sección a d queda 49.3 cm dentro del voladizo.
+           ρw = 0.00218, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.98 kg/cm², φVc = 34.12 t
+           D/C máx = 0.956 (DCON3)
+   Dir. Y: voladizo = (2.50 − 0.50)/2 = 100.0 cm,  d = 46.9 cm
+           La sección a d queda 53.1 cm dentro del voladizo.
+           ρw = 0.00212, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.95 kg/cm², φVc = 34.72 t
+           D/C máx = 0.997 (DCON3)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.052 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     70.86   0.038   0.003     37.80  0.328
+   DCON2     76.29   0.049   0.005     40.70  0.353
+   DCON3    136.18   0.018   1.302     73.38  0.637
+   DCON4     24.98   0.078   1.311     14.15  0.123
+   DCON5     35.68   2.178   0.285     20.49  0.178
+   DCON6    125.47   2.273   0.294     68.42  0.594
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 87.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 162.85 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 10   Bx = 2.85 m   By = 2.85 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 65 cm,  Ø = 14 mm
+ dx = h − rec − 1.5·db = 65 − 7.5 − 2.1 = 55.4 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 65 − 7.5 − 0.7 = 56.8 cm (barras paralelas a Y, capa inferior)
+ d promedio = 56.1 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1    118.75     0.034     0.012       14.63      100.0  OK
+   DCON2    134.57     0.044     0.017       16.58      100.0  OK
+   DCON3    208.13     0.074    -1.278       25.97      100.0  OK
+   DCON4     70.35     0.012     1.310        9.00      100.0  OK
+   DCON5    190.99     2.333     0.013       24.12      100.0  OK
+   DCON6     87.49    -2.247     0.019       11.36      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 46.65 t·m (DCON3), ancho = 2.85 m
+     As,req = 22.66 cm²   As,min = 0.0018·b·h = 33.34 cm²
+     Armado: 22 Ø14 mm @ 12 cm  -> As = 33.87 cm²  (s,max = 45 cm)
+     φMn = 69.13 t·m ≥ Mu  ->  D/C = 0.675   εt = 0.0475 (controlada por tracción)
+   Barras paralelas a Y: Mu = 50.44 t·m (DCON3), ancho = 2.85 m
+     As,req = 23.91 cm²   As,min = 0.0018·b·h = 33.34 cm²
+     Armado: 22 Ø14 mm @ 12 cm  -> As = 33.87 cm²  (s,max = 45 cm)
+     φMn = 70.92 t·m ≥ Mu  ->  D/C = 0.711   εt = 0.0488 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.85 − 0.60)/2 = 112.5 cm,  d = 55.4 cm
+           La sección a d queda 57.1 cm dentro del voladizo.
+           ρw = 0.00214, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.96 kg/cm², φVc = 46.92 t
+           D/C máx = 0.898 (DCON3)
+   Dir. Y: voladizo = (2.85 − 0.50)/2 = 117.5 cm,  d = 56.8 cm
+           La sección a d queda 60.7 cm dentro del voladizo.
+           ρw = 0.00209, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.93 kg/cm², φVc = 47.70 t
+           D/C máx = 0.930 (DCON3)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.444 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1    100.74   0.033   0.012     40.43  0.351
+   DCON2    114.16   0.043   0.017     45.82  0.398
+   DCON3    176.57   0.072   1.246     71.36  0.619
+   DCON4     59.68   0.012   1.277     24.47  0.212
+   DCON5    162.03   2.284   0.013     65.92  0.572
+   DCON6     74.22   2.200   0.019     30.67  0.266
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 105.0 cm, ld = 61.5 cm, ldh = 26.3 cm -> Barra recta
+   Aplastamiento: Pu,max = 208.13 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 11   Bx = 2.20 m   By = 2.20 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 50 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 50 − 7.5 − 1.8 = 40.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 50 − 7.5 − 0.6 = 41.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 41.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     66.73    -0.024    -0.015       13.81      100.0  OK
+   DCON2     69.56    -0.029    -0.018       14.40      100.0  OK
+   DCON3    126.63     0.054    -1.232       26.89      100.0  OK
+   DCON4     22.29    -0.113     1.196        5.34      100.0  OK
+   DCON5     17.50     2.544    -0.293        5.21      100.0  OK
+   DCON6    131.42    -2.603     0.257       28.76      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 19.19 t·m (DCON6), ancho = 2.20 m
+     As,req = 12.69 cm²   As,min = 0.0018·b·h = 19.80 cm²
+     Armado: 18 Ø12 mm @ 11 cm  -> As = 20.36 cm²  (s,max = 45 cm)
+     φMn = 30.48 t·m ≥ Mu  ->  D/C = 0.630   εt = 0.0447 (controlada por tracción)
+   Barras paralelas a Y: Mu = 22.45 t·m (DCON6), ancho = 2.20 m
+     As,req = 14.44 cm²   As,min = 0.0018·b·h = 19.80 cm²
+     Armado: 18 Ø12 mm @ 11 cm  -> As = 20.36 cm²  (s,max = 45 cm)
+     φMn = 31.40 t·m ≥ Mu  ->  D/C = 0.715   εt = 0.0461 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.20 − 0.60)/2 = 80.0 cm,  d = 40.7 cm
+           La sección a d queda 39.3 cm dentro del voladizo.
+           ρw = 0.00227, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.04 kg/cm², φVc = 27.13 t
+           D/C máx = 0.869 (DCON6)
+   Dir. Y: voladizo = (2.20 − 0.50)/2 = 85.0 cm,  d = 41.9 cm
+           La sección a d queda 43.1 cm dentro del voladizo.
+           ρw = 0.00221, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.00 kg/cm², φVc = 27.66 t
+           D/C máx = 0.971 (DCON6)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 3.852 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     53.98   0.023   0.014     33.96  0.295
+   DCON2     56.27   0.028   0.017     35.40  0.307
+   DCON3    102.43   0.052   1.182     65.32  0.567
+   DCON4     18.03   0.109   1.148     12.28  0.107
+   DCON5     14.16   2.460   0.281     10.94  0.095
+   DCON6    106.31   2.517   0.247     68.88  0.598
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 72.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 131.42 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 12   Bx = 2.50 m   By = 2.50 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 60 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 60 − 7.5 − 1.8 = 50.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 60 − 7.5 − 0.6 = 51.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 51.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1    101.31    -0.007    -0.025       16.22      100.0  OK
+   DCON2    111.05    -0.008    -0.032       17.78      100.0  OK
+   DCON3    168.14     0.078    -1.196       27.39      100.0  OK
+   DCON4     64.74    -0.095     1.133       10.83      100.0  OK
+   DCON5    130.35     2.774    -0.037       21.94      100.0  OK
+   DCON6    102.54    -2.790    -0.026       17.49      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 30.74 t·m (DCON3), ancho = 2.50 m
+     As,req = 16.28 cm²   As,min = 0.0018·b·h = 27.00 cm²
+     Armado: 24 Ø12 mm @ 10 cm  -> As = 27.14 cm²  (s,max = 45 cm)
+     φMn = 50.71 t·m ≥ Mu  ->  D/C = 0.606   εt = 0.0476 (controlada por tracción)
+   Barras paralelas a Y: Mu = 33.66 t·m (DCON3), ancho = 2.50 m
+     As,req = 17.43 cm²   As,min = 0.0018·b·h = 27.00 cm²
+     Armado: 24 Ø12 mm @ 10 cm  -> As = 27.14 cm²  (s,max = 45 cm)
+     φMn = 51.94 t·m ≥ Mu  ->  D/C = 0.648   εt = 0.0488 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.50 − 0.60)/2 = 95.0 cm,  d = 50.7 cm
+           La sección a d queda 44.3 cm dentro del voladizo.
+           ρw = 0.00214, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.96 kg/cm², φVc = 37.64 t
+           D/C máx = 0.803 (DCON3)
+   Dir. Y: voladizo = (2.50 − 0.50)/2 = 100.0 cm,  d = 51.9 cm
+           La sección a d queda 48.1 cm dentro del voladizo.
+           ρw = 0.00209, vc = 2.12·λs·ρw^(1/3)·√f'c = 3.93 kg/cm², φVc = 38.24 t
+           D/C máx = 0.847 (DCON3)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 4.252 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     83.03   0.007   0.024     38.08  0.331
+   DCON2     91.02   0.008   0.031     41.75  0.362
+   DCON3    137.81   0.076   1.153     63.78  0.554
+   DCON4     53.06   0.092   1.092     24.91  0.216
+   DCON5    106.84   2.692   0.036     50.31  0.437
+   DCON6     84.04   2.707   0.025     39.86  0.346
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 87.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 168.14 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ ZAPATA PUNTO 13   Bx = 2.20 m   By = 2.20 m   Columna 60 x 50 cm
+===============================================================================
+ Peralte adoptado h = 50 cm,  Ø = 12 mm
+ dx = h − rec − 1.5·db = 50 − 7.5 − 1.8 = 40.7 cm (barras paralelas a X, capa superior)
+ dy = h − rec − 0.5·db = 50 − 7.5 − 0.6 = 41.9 cm (barras paralelas a Y, capa inferior)
+ d promedio = 41.3 cm   (d ≥ 15 cm ✓)
+
+ 1) PRESIONES DE CONTACTO ÚLTIMAS
+   Combo     Pu[t]  Mux[t·m]  Muy[t·m]  qmax[t/m²]  Contacto%  Estado
+   DCON1     76.15     0.032    -0.041       15.77      100.0  OK
+   DCON2     82.34     0.041    -0.051       17.06      100.0  OK
+   DCON3    108.12     0.126    -1.128       23.05      100.0  OK
+   DCON4     65.51    -0.045     1.026       14.14      100.0  OK
+   DCON5    132.99     2.597     0.236       29.07      100.0  OK
+   DCON6     40.64    -2.516    -0.338       10.00      100.0  OK
+
+ 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)
+   Barras paralelas a X: Mu = 19.41 t·m (DCON5), ancho = 2.20 m
+     As,req = 12.84 cm²   As,min = 0.0018·b·h = 19.80 cm²
+     Armado: 18 Ø12 mm @ 11 cm  -> As = 20.36 cm²  (s,max = 45 cm)
+     φMn = 30.48 t·m ≥ Mu  ->  D/C = 0.637   εt = 0.0447 (controlada por tracción)
+   Barras paralelas a Y: Mu = 22.70 t·m (DCON5), ancho = 2.20 m
+     As,req = 14.61 cm²   As,min = 0.0018·b·h = 19.80 cm²
+     Armado: 18 Ø12 mm @ 11 cm  -> As = 20.36 cm²  (s,max = 45 cm)
+     φMn = 31.40 t·m ≥ Mu  ->  D/C = 0.723   εt = 0.0461 (controlada por tracción)
+
+ 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)
+   Dir. X: voladizo = (2.20 − 0.60)/2 = 80.0 cm,  d = 40.7 cm
+           La sección a d queda 39.3 cm dentro del voladizo.
+           ρw = 0.00227, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.04 kg/cm², φVc = 27.13 t
+           D/C máx = 0.879 (DCON5)
+   Dir. Y: voladizo = (2.20 − 0.50)/2 = 85.0 cm,  d = 41.9 cm
+           La sección a d queda 43.1 cm dentro del voladizo.
+           ρw = 0.00221, vc = 2.12·λs·ρw^(1/3)·√f'c = 4.00 kg/cm², φVc = 27.66 t
+           D/C máx = 0.982 (DCON5)
+
+ 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)
+   bo = 3.852 m,  vc = 15.36 kg/cm²,  φvc = 115.2 t/m²
+   Combo     Vu[t]   Msc,x   Msc,y  vu[t/m²]    D/C
+   DCON1     61.60   0.031   0.039     38.77  0.337
+   DCON2     66.61   0.040   0.049     41.93  0.364
+   DCON3     87.46   0.122   1.082     55.88  0.485
+   DCON4     52.99   0.044   0.984     34.09  0.296
+   DCON5    107.58   2.512   0.226     69.66  0.605
+   DCON6     32.87   2.433   0.324     22.72  0.197
+
+ 5) VERIFICACIONES COMPLEMENTARIAS
+   Anclaje: disponible = 72.5 cm, ld = 52.7 cm, ldh = 20.9 cm -> Barra recta
+   Aplastamiento: Pu,max = 132.99 t ≤ φBn = 348.07 t -> CUMPLE
+   Zapata rectangular: No aplica (zapata cuadrada: distribución uniforme, ACI 13.3.3.2)
+   Acero superior: No requerido (contacto total en todas las combinaciones)
+
+ RESULTADO: CUMPLE
+
+===============================================================================
+ RESUMEN GENERAL
+===============================================================================
+ Pto    BxBy[m]  h[cm]  Armado X              Armado Y               D/C máx  Estado
+ 1    1.10x1.10     40  11 Ø10 mm @ 9 cm      11 Ø10 mm @ 9 cm         0.110  CUMPLE  (hormigón en masa)
+ 2    1.10x1.10     40  11 Ø10 mm @ 9 cm      11 Ø10 mm @ 9 cm         0.121  CUMPLE  (hormigón en masa)
+ 3    2.60x2.60     50  21 Ø12 mm @ 12 cm     21 Ø12 mm @ 12 cm        0.907  CUMPLE
+ 4    2.30x2.30     55  21 Ø12 mm @ 10 cm     21 Ø12 mm @ 10 cm        0.811  CUMPLE
+ 5    2.10x2.10     50  17 Ø12 mm @ 12 cm     17 Ø12 mm @ 12 cm        0.838  CUMPLE
+ 6    2.60x2.60     60  25 Ø12 mm @ 10 cm     25 Ø12 mm @ 10 cm        0.887  CUMPLE
+ 7    2.85x2.85     70  24 Ø14 mm @ 11 cm     24 Ø14 mm @ 11 cm        0.894  CUMPLE
+ 8    2.50x2.50     60  24 Ø12 mm @ 10 cm     24 Ø12 mm @ 10 cm        0.882  CUMPLE
+ 9    2.50x2.50     55  22 Ø12 mm @ 11 cm     22 Ø12 mm @ 11 cm        0.997  CUMPLE
+ 10   2.85x2.85     65  22 Ø14 mm @ 12 cm     22 Ø14 mm @ 12 cm        0.930  CUMPLE
+ 11   2.20x2.20     50  18 Ø12 mm @ 11 cm     18 Ø12 mm @ 11 cm        0.971  CUMPLE
+ 12   2.50x2.50     60  24 Ø12 mm @ 10 cm     24 Ø12 mm @ 10 cm        0.847  CUMPLE
+ 13   2.20x2.20     50  18 Ø12 mm @ 11 cm     18 Ø12 mm @ 11 cm        0.982  CUMPLE
