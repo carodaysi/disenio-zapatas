@@ -1,0 +1,125 @@
+
+=== P3  B = 2.40 m, columna 0.60x0.50, h = 45 cm, Ø14 ===
+Magnitud                         Excel  Programa   Dif %
+Mu,x [t·m]                       20.10     20.09    -0.0
+Mu,y [t·m]                       22.91     22.90    -0.0
+d x [cm]                         37.50     35.40    -5.6
+d y [cm]                         37.50     36.80    -1.9
+As,min [cm²]                     16.20     19.44   +20.0
+As req x [cm²]                       —     15.34        
+As req y [cm²]                       —     16.84        
+As prov x [cm²]                  26.17     20.01   -23.5
+As prov y [cm²]                  26.17     20.01   -23.5
+φMn x [t·m]                      35.83     26.04   -27.3
+φMn y [t·m]                      35.83     27.10   -24.4
+Vu 1D x [t]                      26.05     27.09    +4.0
+Vu 1D y [t]                      29.22     29.56    +1.2
+φVc 1D x [t]                     29.60     26.05   -12.0
+φVc 1D y [t]                     29.60     26.73    -9.7
+Vu punz [t]                     100.98    101.48    +0.5
+bo [cm]                         370.00    364.40    -1.5
+φVc punz [t]                    165.88    151.55    -8.6
+  barras programa (Ø14): X 13 Ø14 mm @ 18 cm | Y 13 Ø14 mm @ 18 cm | Excel: 17 Ø14 @ 15 cm
+  D/C programa: flex 0.772/0.845  v1D 1.040/1.106  punz 0.687 (vu = 79.1 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 1.1060394000253493, 'DCON6')
+  combos programa: flex DCON6/DCON6  v1D DCON6/DCON6  punz DCON6
+  Diseño libre del programa: h = 50 cm, 20 Ø12 mm @ 11 cm / 20 Ø12 mm @ 11 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.889; Con h = 45 cm no cumple: Cortante 1D X (D/C = 1.023, DCON6); Cortante 1D Y (D/C = 1.096, DCON6)
+
+=== P4  B = 2.30 m, columna 0.60x0.50, h = 50 cm, Ø14 ===
+Magnitud                         Excel  Programa   Dif %
+Mu,x [t·m]                       22.37     22.37    +0.0
+Mu,y [t·m]                       24.64     24.63    -0.0
+d x [cm]                         42.50     40.40    -4.9
+d y [cm]                         42.50     41.80    -1.6
+As,min [cm²]                     17.60     20.70   +17.6
+As req x [cm²]                       —     14.93        
+As req y [cm²]                       —     15.90        
+As prov x [cm²]                  24.63     21.55   -12.5
+As prov y [cm²]                  24.63     21.55   -12.5
+φMn x [t·m]                      38.40     32.01   -16.6
+φMn y [t·m]                      38.40     33.15   -13.7
+Vu 1D x [t]                      26.35     27.66    +5.0
+Vu 1D y [t]                      28.89     29.32    +1.5
+φVc 1D x [t]                     30.65     28.34    -7.5
+φVc 1D y [t]                     30.65     28.99    -5.4
+Vu punz [t]                     114.78    115.54    +0.7
+bo [cm]                         390.00    384.40    -1.4
+φVc punz [t]                         —    182.01        
+  barras programa (Ø14): X 14 Ø14 mm @ 16 cm | Y 14 Ø14 mm @ 16 cm | Excel: 16 Ø14 @ 15 cm
+  D/C programa: flex 0.699/0.743  v1D 0.976/1.011  punz 0.643 (vu = 74.1 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 1.0112753088439803, 'DCON4')
+  combos programa: flex DCON4/DCON4  v1D DCON4/DCON4  punz DCON4
+  Diseño libre del programa: h = 55 cm, 21 Ø12 mm @ 10 cm / 21 Ø12 mm @ 10 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.811; Con h = 50 cm no cumple: Cortante 1D Y (D/C = 1.009, DCON4)
+
+=== P5  B = 2.10 m, columna 0.60x0.50, h = 45 cm, Ø14 ===
+Magnitud                         Excel  Programa   Dif %
+Mu,x [t·m]                       15.81     15.80    -0.1
+Mu,y [t·m]                       18.47     18.46    -0.1
+d x [cm]                         37.50     35.40    -5.6
+d y [cm]                         37.50     36.80    -1.9
+As,min [cm²]                     14.18     17.01   +20.0
+As req x [cm²]                       —     12.03        
+As req y [cm²]                       —     13.55        
+As prov x [cm²]                  23.09     18.47   -20.0
+As prov y [cm²]                  23.09     18.47   -20.0
+φMn x [t·m]                      31.60     24.00   -24.1
+φMn y [t·m]                      31.60     24.97   -21.0
+Vu 1D x [t]                      21.09     22.25    +5.5
+Vu 1D y [t]                      24.58     24.97    +1.6
+φVc 1D x [t]                     25.97     23.20   -10.7
+φVc 1D y [t]                     25.97     23.81    -8.3
+Vu punz [t]                      94.62     95.29    +0.7
+bo [cm]                         370.00    364.40    -1.5
+φVc punz [t]                    165.88    151.55    -8.6
+  barras programa (Ø14): X 12 Ø14 mm @ 17 cm | Y 12 Ø14 mm @ 17 cm | Excel: 15 Ø14 @ 15 cm
+  D/C programa: flex 0.658/0.739  v1D 0.959/1.049  punz 0.646 (vu = 74.4 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 1.0488224004899798, 'DCON5')
+  combos programa: flex DCON5/DCON5  v1D DCON5/DCON5  punz DCON5
+  Diseño libre del programa: h = 50 cm, 17 Ø12 mm @ 12 cm / 17 Ø12 mm @ 12 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.838; Con h = 45 cm no cumple: Cortante 1D Y (D/C = 1.052, DCON5)
+
+=== P6  B = 2.60 m, columna 0.60x0.50, h = 60 cm, Ø14 ===
+Magnitud                         Excel  Programa   Dif %
+Mu,x [t·m]                       33.65     33.64    -0.0
+Mu,y [t·m]                       36.64     36.62    -0.1
+d x [cm]                         52.50     50.40    -4.0
+d y [cm]                         52.50     51.80    -1.3
+As,min [cm²]                     24.57     28.08   +14.3
+As req x [cm²]                       —     17.95        
+As req y [cm²]                       —     19.02        
+As prov x [cm²]                  27.71     29.25    +5.6
+As prov y [cm²]                  27.71     29.25    +5.6
+φMn x [t·m]                      53.67     54.26    +1.1
+φMn y [t·m]                      53.67     55.81    +4.0
+Vu 1D x [t]                      32.01     33.41    +4.4
+Vu 1D y [t]                      34.90     35.34    +1.3
+φVc 1D x [t]                     39.82     39.46    -0.9
+φVc 1D y [t]                     39.82     40.19    +0.9
+Vu punz [t]                     143.27    144.00    +0.5
+bo [cm]                         430.00    424.40    -1.3
+φVc punz [t]                         —    249.85        
+  barras programa (Ø14): X 19 Ø14 mm @ 13 cm | Y 19 Ø14 mm @ 13 cm | Excel: 18 Ø14 @ 15 cm
+  D/C programa: flex 0.620/0.656  v1D 0.847/0.879  punz 0.582 (vu = 67.0 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 0.8793368240141293, 'DCON4')
+  combos programa: flex DCON4/DCON4  v1D DCON4/DCON4  punz DCON4
+  Diseño libre del programa: h = 60 cm, 25 Ø12 mm @ 10 cm / 25 Ø12 mm @ 10 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.887; Con h = 55 cm no cumple: Cortante 1D X (D/C = 1.029, DCON4); Cortante 1D Y (D/C = 1.067, DCON4)
+
+=== P7  B = 3.00 m, columna 0.60x0.50, h = 65 cm, Ø16 ===
+Magnitud                         Excel  Programa   Dif %
+Mu,x [t·m]                       57.44     57.42    -0.0
+Mu,y [t·m]                       61.86     61.85    -0.0
+d x [cm]                         57.50     55.10    -4.2
+d y [cm]                         57.50     56.70    -1.4
+As,min [cm²]                     31.05     35.10   +13.0
+As req x [cm²]                       —     28.13        
+As req y [cm²]                       —     29.46        
+As prov x [cm²]                  42.22     36.19   -14.3
+As prov y [cm²]                  42.22     36.19   -14.3
+φMn x [t·m]                      89.13     73.44   -17.6
+φMn y [t·m]                      89.13     75.63   -15.2
+Vu 1D x [t]                      49.90     51.79    +3.8
+Vu 1D y [t]                      53.45     54.07    +1.2
+φVc 1D x [t]                     53.57     49.46    -7.7
+φVc 1D y [t]                     53.57     50.41    -5.9
+Vu punz [t]                     204.18    205.11    +0.5
+bo [cm]                         450.00    443.60    -1.4
+φVc punz [t]                         —    285.68        
+  barras programa (Ø16): X 18 Ø16 mm @ 16 cm | Y 18 Ø16 mm @ 16 cm | Excel: 21 Ø16 @ 15 cm
+  D/C programa: flex 0.782/0.818  v1D 1.047/1.073  punz 0.722 (vu = 83.2 t/m², φvc = 115.2); gobierna ('Cortante 1D Y', 1.0726366491379877, 'DCON4')
+  combos programa: flex DCON4/DCON4  v1D DCON4/DCON4  punz DCON4
+  Diseño libre del programa: h = 70 cm, 25 Ø14 mm @ 11 cm / 25 Ø14 mm @ 11 cm, estado CUMPLE, gobierna Cortante 1D Y D/C 0.918; Con h = 65 cm no cumple: Cortante 1D X (D/C = 1.046, DCON4); Cortante 1D Y (D/C = 1.078, DCON4)
