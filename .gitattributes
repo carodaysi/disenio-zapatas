@@ -1,0 +1,11 @@
+# Normaliza los finales de línea de los archivos de texto
+* text=auto
+
+# Los .bat de Windows necesitan CRLF para ejecutarse bien
+*.bat text eol=crlf
+
+# Archivos binarios
+*.xlsx binary
+*.docx binary
+*.png binary
+*.pdf binary

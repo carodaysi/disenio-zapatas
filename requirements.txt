@@ -1,0 +1,9 @@
+# Dependencias del programa de diseño de zapatas aisladas (ACI 318-19)
+# Probado con Python 3.10.22, numpy 2.2.5, pandas 2.3.3, matplotlib 3.10.9 y openpyxl 3.1.5.
+# Instalar con:  pip install -r requirements.txt
+# La interfaz gráfica usa tkinter, que viene incluido con Python (no se instala con pip).
+
+numpy>=1.23
+pandas>=1.5
+matplotlib>=3.6
+openpyxl>=3.1
