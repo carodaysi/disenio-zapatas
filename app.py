@@ -31,7 +31,6 @@ import Diseno_Zapatas_Aisladas as dz
 
 CARPETA = os.path.dirname(os.path.abspath(__file__))
 ARCHIVO_EJEMPLO = os.path.join(CARPETA, "InputData01.xlsx")
-COLUMNAS_REQUERIDAS = ["Point", "Load", "FX", "FY", "FZ", "MX", "MY", "Bx", "By", "Bcx", "Bcy"]
 
 # Parámetros editables: (variable del programa, etiqueta, unidad, factor, paso, formato).
 # valor en el programa = valor en pantalla × factor
@@ -49,6 +48,7 @@ PARAMETROS = [
 
 COLOR_OK = "#E8F5E9"
 COLOR_MASA = "#E3F2FD"
+COLOR_REVISAR = "#FFF8E1"
 COLOR_FALLA = "#FDECEA"
 
 st.set_page_config(page_title="Diseño de zapatas aisladas — ACI 318-19",
@@ -114,6 +114,7 @@ def valores_por_defecto():
     valores = {attr: getattr(dz, attr) for attr, *_ in PARAMETROS}
     valores["H_MIN_PUNTO"] = dict(dz.H_MIN_PUNTO)
     valores["TRASLADAR_CORTANTE"] = dz.TRASLADAR_CORTANTE
+    valores["INCLUIR_PESO_PROPIO"] = dz.INCLUIR_PESO_PROPIO
     return valores
 
 
@@ -177,13 +178,15 @@ def restaurar_valores():
         st.session_state[attr] = float(defecto[attr] / factor)
     st.session_state["h_puntos"] = texto_h_puntos(defecto["H_MIN_PUNTO"])
     st.session_state["traslado"] = defecto["TRASLADAR_CORTANTE"]
+    st.session_state["peso_propio"] = defecto["INCLUIR_PESO_PROPIO"]
 
 
 def tabla_resumen(resultados):
     filas = []
     for r in resultados:
         if "bar_x" not in r:
-            filas.append({"Zapata": f"P{r['punto']}", "Estado": f"NO DISEÑADA: {r['motivo']}"})
+            filas.append({"Zapata": f"P{r['punto']}", "Estado": "NO CUMPLE",
+                          "Observación": r["motivo"]})
             continue
         g = r["geo"]
         filas.append({
@@ -195,14 +198,18 @@ def tabla_resumen(resultados):
             "D/C flexión": formato_dc(max(r["DC_flex_x"], r["DC_flex_y"])),
             "D/C cortante 1D": formato_dc(maximo_valido(r["DC_v1_x"], r["DC_v1_y"])),
             "D/C punzonamiento": formato_dc(r["DC_punz"]),
+            "Gobierna": f"{r['gobierna'][0]} ({r['gobierna'][2]})",
             "Tipo": "Hormigón en masa" if r["bloque"] else "Zapata flexible",
-            "Estado": "CUMPLE" if r["cumple"] else "NO CUMPLE",
+            "Estado": r["estado"],
+            "Observación": r["motivo"] if r["estado"] != "CUMPLE" else "",
         })
     return pd.DataFrame(filas)
 
 
 def colorear_filas(fila):
-    if fila.get("Estado") != "CUMPLE":
+    if fila.get("Estado") == "REVISAR":
+        color = COLOR_REVISAR
+    elif fila.get("Estado") != "CUMPLE":
         color = COLOR_FALLA
     elif fila.get("Tipo") == "Hormigón en masa":
         color = COLOR_MASA
@@ -246,7 +253,8 @@ def disenar(contenido, nombre_archivo, hoja, valores, barra):
                 "info": (f"{g['Bx']:.2f} × {g['By']:.2f} m · columna {g['cx'] * 100:.0f} × "
                          f"{g['cy'] * 100:.0f} cm · h = {r['h'] * 100:.0f} cm · "
                          f"{'hormigón en masa' if r['bloque'] else 'zapata flexible'} · "
-                         f"{'CUMPLE' if r['cumple'] else 'NO CUMPLE'}"),
+                         f"{r['estado']} · controla h: {r['control_h']}"),
+                "advertencias": r.get("advertencias", []),
             }
         archivo_zip = io.BytesIO()
         with zipfile.ZipFile(archivo_zip, "w", zipfile.ZIP_DEFLATED) as z:
@@ -255,7 +263,8 @@ def disenar(contenido, nombre_archivo, hoja, valores, barra):
         return {
             "resumen": tabla_resumen(resultados),
             "total": len(resultados),
-            "cumplen": sum(1 for r in resultados if r.get("cumple")),
+            "cumplen": sum(1 for r in resultados if r.get("estado") == "CUMPLE"),
+            "revisar": sum(1 for r in resultados if r.get("estado") == "REVISAR"),
             "masa": sum(1 for r in resultados if r.get("bloque")),
             "zapatas": zapatas,
             "dc": leer("Resumen_Demanda_Capacidad.png"),
@@ -271,6 +280,7 @@ def disenar(contenido, nombre_archivo, hoja, valores, barra):
 defecto = valores_por_defecto()
 if "FC" not in st.session_state:
     restaurar_valores()
+st.session_state.setdefault("peso_propio", defecto["INCLUIR_PESO_PROPIO"])
 
 st.title("Diseño de zapatas aisladas de hormigón armado")
 st.caption("Flexión, cortante unidireccional y punzonamiento según ACI 318-19")
@@ -299,9 +309,13 @@ with st.sidebar:
         st.number_input(f"{etiqueta} [{unidad}]", min_value=0.01, step=paso, format=formato, key=attr)
 
     st.header("3. Opciones")
-    st.text_input("Peralte inicial por zapata", key="h_puntos",
-                  help="Formato zapata:h[cm], por ejemplo 1:40, 2:40. Déjelo vacío para usar "
+    st.text_input("Peralte inicial por zapata (opcional)", key="h_puntos",
+                  help="Formato zapata:h[cm], por ejemplo 1:45, 2:45. Déjelo vacío para usar "
                        "el peralte inicial general en todas las zapatas.")
+    st.checkbox("Sumar peso propio de zapata y relleno", key="peso_propio",
+                help="Actívelo si las cargas del Excel no incluyen la zapata ni el relleno. Se "
+                     f"recalcula con cada h (factor {dz.FACTOR_PESO:g}); la flexión y el cortante "
+                     "usan la presión neta qu − w para no contarlo dos veces.")
     st.checkbox("Trasladar cortantes FX, FY a la base (V·h)", key="traslado",
                 help="Desactivado: las cadenas toman el cortante (criterio de clase).")
     st.button("Restaurar valores por defecto", on_click=restaurar_valores)
@@ -311,16 +325,13 @@ with st.sidebar:
 errores = []
 try:
     datos = leer_hoja(contenido, hoja)
+except dz.ErrorDatos as error:
+    # leer_datos ya valida columnas, unidades, valores y geometría
+    datos = None
+    errores.append(f"Hoja «{hoja}»: {error}")
 except Exception as error:
     datos = None
     errores.append(f"No se pudieron leer los datos de la hoja «{hoja}»: {error}")
-if datos is not None:
-    faltan = [c for c in COLUMNAS_REQUERIDAS if c not in datos.columns]
-    if faltan:
-        errores.append("Al Excel le faltan las columnas: " + ", ".join(faltan) +
-                       ". Revise la plantilla de ejemplo.")
-    elif datos.empty:
-        errores.append("La hoja no tiene filas de datos.")
 
 valores = {attr: st.session_state[attr] * factor for attr, _, _, factor, _, _ in PARAMETROS}
 if valores["H_MIN"] >= valores["H_MAX"]:
@@ -330,6 +341,7 @@ try:
 except ValueError as error:
     errores.append(str(error))
 valores["TRASLADAR_CORTANTE"] = st.session_state["traslado"]
+valores["INCLUIR_PESO_PROPIO"] = st.session_state["peso_propio"]
 firma = (nombre_archivo, len(contenido), hoja, tuple(sorted((k, str(v)) for k, v in valores.items())))
 
 if disenar_ahora:
@@ -359,6 +371,7 @@ if res:
                    "diseño anterior: presione «Diseñar zapatas» para actualizarlos.")
     else:
         st.success(f"Diseño terminado: {res['total']} zapatas · {res['cumplen']} cumplen · "
+                   f"{res['revisar']} para revisar (pérdida de contacto) · "
                    f"{res['masa']} trabajan como hormigón en masa.")
     c1, c2, c3 = st.columns(3)
     c1.download_button("Descargar Excel de resultados", res["excel"], "Resultados_Zapatas.xlsx",
@@ -387,8 +400,9 @@ with pestanas[1]:
         st.dataframe(res["resumen"].style.apply(colorear_filas, axis=1), hide_index=True,
                      width="stretch", height=36 * (len(res["resumen"]) + 1) + 4)
         st.caption("Verde: cumple · Azul: cumple como hormigón en masa (d ≥ voladizo, sin "
-                   "cortante) · Rojo: no cumple. El detalle de cada zapata está en la pestaña "
-                   "siguiente.")
+                   "cortante) · Amarillo: revisar (resiste, pero alguna combinación pierde "
+                   "contacto con el suelo) · Rojo: no cumple. El detalle de cada zapata está en "
+                   "la pestaña siguiente.")
     else:
         st.info(sin_resultados)
 
@@ -397,6 +411,8 @@ with pestanas[2]:
         nombre = st.selectbox("Zapata", list(res["zapatas"]))
         z = res["zapatas"][nombre]
         st.caption(z["info"])
+        for aviso in z["advertencias"]:
+            st.warning(aviso)
         st.image(z["figura"], width="stretch")
         st.download_button(f"Descargar figura de {nombre}", z["figura"], f"Zapata_{nombre}.png",
                            mime="image/png")

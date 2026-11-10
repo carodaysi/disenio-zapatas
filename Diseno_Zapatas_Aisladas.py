@@ -13,11 +13,41 @@
             dimensiones de la zapata (Bx, By) y de la columna (Bcx, Bcy).
  Unidades : fuerzas [tonf], longitudes [m], presiones [tonf/m²],
             materiales [kg/cm²] (ecuaciones mks del ACI 318-19).
-            1 kg/cm² = 10 tonf/m².
+            1 kg/cm² = 10 tonf/m². Las verificaciones resistentes se evalúan en
+            kgf-cm (Mu·10⁵ kgf·cm, b·100 cm) y se devuelven en tonf-m.
+
+ Estructura del Excel (una fila por zapata y combinación; ver leer_datos):
+   Point            identificación de la zapata
+   Load             nombre de la combinación mayorada (DCON1, DCON2, ...)
+   FZ [tonf]        carga axial mayorada; positiva = compresión sobre la zapata
+   MX, MY [tonf·m]  momentos mayorados en la base de la columna
+   FX, FY [tonf]    cortantes en la base (opcionales; solo con TRASLADAR_CORTANTE)
+   Bx, By [m]       dimensiones en planta de la zapata (datos, no se modifican)
+   Bcx, Bcy [m]     dimensiones de la columna
+   ecx, ecy [m]     excentricidad del eje de la columna respecto al centro de la
+                    zapata (opcionales; 0 si no existen)
+   Se aceptan encabezados con la unidad entre corchetes, p. ej. "Bx[m]"; si la
+   unidad no es la esperada el programa se detiene con un mensaje.
+
+ Convención de signos (ejes con origen en el centro de la zapata):
+   MY > 0 lleva la resultante hacia +X (ex = MY/P) y MX > 0 hacia +Y (ey = MX/P).
+   Con columna centrada la zapata es simétrica y se revisa a ambos lados, así que
+   el signo de MX y MY solo define qué borde se carga. Con columna excéntrica,
+   ecx/ecy deben darse en este mismo sistema (el momento P·e se suma a MY/MX).
+
+ Peso propio: las reacciones de ETABS no incluyen la zapata ni el relleno. Con
+   INCLUIR_PESO_PROPIO = True se añade W = FACTOR_PESO·(γc·h + γs·(Df − h))·Bx·By,
+   recalculado con cada h de la iteración. W aumenta la presión de contacto, pero
+   también actúa hacia abajo sobre los voladizos, así que la flexión y el cortante
+   se calculan con la presión neta qu − w (sin contarlo dos veces). Con contacto
+   total W se anula y las solicitaciones son las mismas que con FZ sola.
 
  Procedimiento para cada zapata:
    1. Presión de contacto última qu(x,y) para cada combinación, sin admitir
-      tracciones en el suelo (contacto parcial resuelto numéricamente).
+      tracciones en el suelo (contacto parcial resuelto numéricamente). Las
+      combinaciones con contacto parcial se señalan (estado REVISAR) y las que
+      quedan fuera del modelo (tracción o resultante fuera de la zapata) hacen
+      que la zapata NO CUMPLA.
    2. Se propone un peralte h (desde H_MIN con incrementos DH) y un diámetro
       de barra.
    3. Flexión en la cara de la columna (ACI 13.2.7.1, 8.4.2.1) -> As, As,min.
@@ -36,6 +66,7 @@
 """
 
 import os
+import re
 import math
 import numpy as np
 import pandas as pd
@@ -65,12 +96,15 @@ PHI_APLAST = 0.65
 # --- Geometría y detallado --------------------------------------------------
 REC = 0.075         # recubrimiento, hormigón contra el suelo [m] (ACI 20.5.1.3.1)
 D_MIN = 0.15        # peralte efectivo mínimo [m] (ACI 13.3.1.2: 150 mm)
-H_MIN = 0.30        # peralte inicial de prueba [m] (criterio práctico)
+# Peralte inicial de búsqueda, igual para todas las zapatas. 40 cm es el espesor
+# mínimo práctico adoptado; con él, P1 y P2 (1.10 m) tienen d ≥ voladizo y
+# trabajan como hormigón en masa. Las demás zapatas necesitan más de 40 cm.
+H_MIN = 0.40        # peralte inicial de prueba [m]
 H_MAX = 1.50        # peralte máximo a probar [m]
 DH = 0.05           # incremento del peralte [m]
-# Peralte inicial adoptado para zapatas específicas {Point: h [m]}. P1 y P2: con
-# h = 40 cm, d ≥ voladizo y trabajan como hormigón en masa (sin cortante 1D).
-H_MIN_PUNTO = {1: 0.40, 2: 0.40}
+# Opcional: peralte inicial distinto para zapatas específicas {Point: h [m]}.
+# Vacío = todas empiezan en H_MIN (el script no depende de un archivo concreto).
+H_MIN_PUNTO = {}
 RHO_MIN = 0.0018    # cuantía mínima As,min = 0.0018·b·h (ACI 8.6.1.1, fy = 4200)
 S_MIN = 0.10        # separación mínima práctica entre barras [m]
 S_LIBRE_MIN = 0.025 # espaciamiento libre mínimo entre barras [m] (ACI 25.2.1)
@@ -78,10 +112,17 @@ S_LIBRE_MIN = 0.025 # espaciamiento libre mínimo entre barras [m] (ACI 25.2.1)
 # recurso para anclar barras en voladizos muy cortos.
 DIAMETROS = [12, 14, 16, 18, 20, 22, 25, 10]
 
-# --- Suelo y relleno (solo para el acero superior por levantamiento) --------
+# --- Peso propio de zapata y relleno ----------------------------------------
 GAMMA_C = 2.4       # peso específico del hormigón [tonf/m³]
 GAMMA_S = 1.8       # peso específico del relleno [tonf/m³]
 DF = 1.50           # profundidad de desplante [m]
+# True: las cargas del Excel NO incluyen la zapata ni el relleno y se añaden con
+# el h de cada iteración. False: las cargas ya los incluyen (no se suman de nuevo).
+INCLUIR_PESO_PROPIO = True
+# Factor de carga del peso propio. 0.9 (combinación 0.9D + E) es el valor
+# conservador para el contacto con el suelo y para la flexión con contacto parcial.
+FACTOR_PESO = 0.9
+CONTACTO_TOTAL = 99.99  # [%] por debajo se considera pérdida de contacto parcial
 
 # --- Opciones de cálculo ----------------------------------------------------
 # False: los cortantes FX, FY de la base los toman las cadenas / vigas de
@@ -115,12 +156,149 @@ def beta_1(fc):
     return max(0.65, 0.85 - 0.05 * (fc - 280.0) / 70.0)
 
 
+class ErrorDatos(ValueError):
+    """Error en los datos de entrada o en los parámetros, con un mensaje claro."""
+
+
+# Columnas del Excel: nombre -> unidades aceptadas en el encabezado (entre corchetes)
+COLUMNAS_OBLIGATORIAS = {"Point": None, "Load": None,
+                         "FZ": ("tonf", "t", "ton"), "MX": ("tonf-m", "tonf·m", "t-m", "t·m", "tonf*m"),
+                         "MY": ("tonf-m", "tonf·m", "t-m", "t·m", "tonf*m"),
+                         "Bx": ("m",), "By": ("m",), "Bcx": ("m",), "Bcy": ("m",)}
+COLUMNAS_OPCIONALES = {"FX": ("tonf", "t", "ton"), "FY": ("tonf", "t", "ton"),
+                       "ecx": ("m",), "ecy": ("m",)}
+COLUMNAS_NUMERICAS = ["FZ", "MX", "MY", "FX", "FY", "Bx", "By", "Bcx", "Bcy", "ecx", "ecy"]
+COLUMNAS_GEOMETRIA = ["Bx", "By", "Bcx", "Bcy", "ecx", "ecy"]
+
+
+def _filas_excel(indices, maximo=8):
+    """Números de fila tal como se ven en Excel (encabezado en la fila 1)."""
+    filas = [str(i + 2) for i in indices]
+    return ", ".join(filas[:maximo]) + (" …" if len(filas) > maximo else "")
+
+
+def validar_parametros():
+    """Revisa que los parámetros de la sección 0 tengan valores coherentes."""
+    errores = []
+    for nombre in ("FC", "FY", "REC", "H_MIN", "H_MAX", "DH", "S_MIN", "GAMMA_C", "DF"):
+        valor = globals()[nombre]
+        if not isinstance(valor, (int, float)) or not math.isfinite(valor) or valor <= 0:
+            errores.append(f"{nombre} debe ser un número mayor que cero (valor: {valor}).")
+    if not errores:
+        if not 150 <= FC <= 700:
+            errores.append(f"f'c = {FC} kg/cm² fuera del rango usual (150–700): ¿unidades?")
+        if not 2000 <= FY <= 6000:
+            errores.append(f"fy = {FY} kg/cm² fuera del rango usual (2000–6000): ¿unidades?")
+        if REC >= 0.30:
+            errores.append(f"Recubrimiento = {REC} m: debe darse en metros (p. ej. 0.075).")
+        if H_MIN >= H_MAX:
+            errores.append("El peralte inicial H_MIN debe ser menor que H_MAX.")
+        if H_MAX > 5.0:
+            errores.append(f"H_MAX = {H_MAX} m: debe darse en metros.")
+    if not DIAMETROS or any(d <= 0 for d in DIAMETROS):
+        errores.append("DIAMETROS debe contener al menos un diámetro positivo [mm].")
+    if GAMMA_S < 0 or FACTOR_PESO < 0:
+        errores.append("GAMMA_S y FACTOR_PESO no pueden ser negativos.")
+    for punto, h in H_MIN_PUNTO.items():
+        if not 0 < h < H_MAX:
+            errores.append(f"H_MIN_PUNTO[{punto}] = {h} m debe estar entre 0 y H_MAX.")
+    if errores:
+        raise ErrorDatos("Parámetros no válidos:\n  - " + "\n  - ".join(errores))
+
+
 def leer_datos(ruta, hoja):
-    """Lee el Excel de entrada y normaliza los nombres de las columnas."""
-    df = pd.read_excel(ruta, sheet_name=hoja)
-    df.columns = [str(c).strip() for c in df.columns]
-    df = df.rename(columns={"Bx[m]": "Bx", "By[m]": "By",
-                            "Bcx[m]": "Bcx", "Bcy[m]": "Bcy"})
+    """Lee el Excel de entrada, normaliza los encabezados y valida los datos.
+    Lanza ErrorDatos con un mensaje claro si falta algo o hay valores no válidos."""
+    try:
+        df = pd.read_excel(ruta, sheet_name=hoja)
+    except FileNotFoundError:
+        raise ErrorDatos(f"No se encontró el archivo de entrada: {ruta}")
+    except ValueError as error:
+        if "Worksheet" in str(error):
+            hojas = pd.ExcelFile(ruta).sheet_names
+            raise ErrorDatos(f"El Excel no tiene la hoja «{hoja}». Hojas disponibles: "
+                             f"{', '.join(hojas)}.")
+        raise ErrorDatos(f"No se pudo leer el Excel: {error}")
+
+    # --- Encabezados: "Bx[m]" -> columna "Bx", unidad "m" ---------------------
+    errores, nombres, unidades = [], {}, {}
+    validas = {**COLUMNAS_OBLIGATORIAS, **COLUMNAS_OPCIONALES}
+    for col in df.columns:
+        m = re.match(r"^\s*([^\[\]]*?)\s*(?:\[\s*([^\]]*?)\s*\])?\s*$", str(col))
+        base, unidad = (m.group(1), m.group(2)) if m else (str(col).strip(), None)
+        clave = next((k for k in validas if k.lower() == base.lower()), base)
+        nombres[col] = clave
+        if clave in validas and unidad:
+            unidades[clave] = unidad
+    df = df.rename(columns=nombres)
+    for clave, unidad in unidades.items():
+        aceptadas = validas[clave]
+        if aceptadas and unidad.lower().replace(" ", "") not in aceptadas:
+            errores.append(f"Unidad inconsistente en «{clave}[{unidad}]»: se espera "
+                           f"[{aceptadas[0]}].")
+    faltan = [c for c in COLUMNAS_OBLIGATORIAS if c not in df.columns]
+    if faltan:
+        errores.append("Faltan las columnas obligatorias: " + ", ".join(faltan) +
+                       ". Encabezados encontrados: " + ", ".join(map(str, df.columns)) + ".")
+    if TRASLADAR_CORTANTE and not {"FX", "FY"} <= set(df.columns):
+        errores.append("TRASLADAR_CORTANTE = True requiere las columnas FX y FY.")
+    if errores:
+        raise ErrorDatos("Datos de entrada no válidos:\n  - " + "\n  - ".join(errores))
+
+    # --- Filas vacías y columnas opcionales ------------------------------------
+    df = df.dropna(how="all").reset_index(drop=True)
+    if df.empty:
+        raise ErrorDatos(f"La hoja «{hoja}» no tiene filas de datos.")
+    for col in COLUMNAS_OPCIONALES:
+        if col not in df.columns:
+            df[col] = 0.0
+
+    # --- Valores numéricos y vacíos --------------------------------------------
+    for col in ("Point", "Load"):
+        vacias = df.index[df[col].isna()]
+        if len(vacias):
+            errores.append(f"«{col}» vacío en las filas {_filas_excel(vacias)}.")
+    for col in COLUMNAS_NUMERICAS:
+        numeros = pd.to_numeric(df[col], errors="coerce")
+        malas = df.index[numeros.isna() & df[col].notna()]
+        if len(malas):
+            errores.append(f"«{col}» no es numérico en las filas {_filas_excel(malas)}.")
+        vacias = df.index[df[col].isna()]
+        if len(vacias) and col not in COLUMNAS_OPCIONALES:
+            errores.append(f"«{col}» vacío en las filas {_filas_excel(vacias)}.")
+        df[col] = numeros.fillna(0.0) if col in COLUMNAS_OPCIONALES else numeros
+    if errores:
+        raise ErrorDatos("Datos de entrada no válidos:\n  - " + "\n  - ".join(errores))
+    df["Load"] = df["Load"].astype(str).str.strip()
+    if pd.api.types.is_float_dtype(df["Point"]) and (df["Point"] % 1 == 0).all():
+        df["Point"] = df["Point"].astype(int)
+
+    # --- Geometría -------------------------------------------------------------
+    for col in ("Bx", "By", "Bcx", "Bcy"):
+        malas = df.index[df[col] <= 0]
+        if len(malas):
+            errores.append(f"«{col}» debe ser mayor que cero (filas {_filas_excel(malas)}).")
+    grandes = df.index[(df[["Bx", "By"]] > 20).any(axis=1)]
+    if len(grandes):
+        errores.append(f"Bx o By mayor que 20 m en las filas {_filas_excel(grandes)}: "
+                       "¿las dimensiones están en cm? Deben estar en metros.")
+    for punto, grupo in df.groupby("Point", sort=False):
+        distintas = [c for c in COLUMNAS_GEOMETRIA if grupo[c].nunique() > 1]
+        if distintas:
+            errores.append(f"Zapata {punto}: {', '.join(distintas)} cambian entre "
+                           "combinaciones (deben ser iguales en todas sus filas).")
+        f = grupo.iloc[0]
+        if abs(f["ecx"]) + f["Bcx"] / 2 > f["Bx"] / 2 or abs(f["ecy"]) + f["Bcy"] / 2 > f["By"] / 2:
+            errores.append(f"Zapata {punto}: la columna ({f['Bcx']:g} × {f['Bcy']:g} m, "
+                           f"e = {f['ecx']:g}, {f['ecy']:g} m) sale de la zapata "
+                           f"({f['Bx']:g} × {f['By']:g} m).")
+        elif f["Bcx"] >= f["Bx"] or f["Bcy"] >= f["By"]:
+            errores.append(f"Zapata {punto}: la columna no es menor que la zapata.")
+        repetidas = grupo["Load"][grupo["Load"].duplicated()].unique()
+        if len(repetidas):
+            errores.append(f"Zapata {punto}: combinación repetida {', '.join(repetidas)}.")
+    if errores:
+        raise ErrorDatos("Datos de entrada no válidos:\n  - " + "\n  - ".join(errores))
     return df
 
 
@@ -198,6 +376,49 @@ def presion_contacto(P, Mx, My, Bx, By, n=N_MALLA):
     return campo
 
 
+def peso_cimiento(geo, h):
+    """Peso mayorado de zapata + relleno: W [tonf] y carga repartida w [tonf/m²]."""
+    if not INCLUIR_PESO_PROPIO:
+        return 0.0, 0.0
+    w = FACTOR_PESO * (GAMMA_C * h + GAMMA_S * max(DF - h, 0.0))
+    return w * geo["Bx"] * geo["By"], w
+
+
+def presiones_combinacion(c, geo, h):
+    """Presión de contacto de una combinación para el peralte h.
+    - Momentos en la base: MX, MY (+ V·h si TRASLADAR_CORTANTE).
+    - Columna excéntrica: se suma P·e al momento respecto al centro de la zapata.
+    - Peso propio W (si corresponde) centrado en la zapata.
+    Devuelve el campo con q (presión total sobre el suelo) y q_net = q − w, que es
+    la presión que flexiona y corta la zapata."""
+    Mx_b, My_b = c["Mx"], c["My"]
+    if TRASLADAR_CORTANTE:
+        Mx_b, My_b = c["Mx"] - c["Vy"] * h, c["My"] + c["Vx"] * h
+    W, w = peso_cimiento(geo, h)
+    campo = presion_contacto(c["P"] + W, Mx_b + c["P"] * geo["ey"], My_b + c["P"] * geo["ex"],
+                             geo["Bx"], geo["By"])
+    campo.update(P=c["P"], Mx=Mx_b, My=My_b, W=W, w=w, q_net=campo["q"] - w,
+                 Xc=campo["X"] - geo["ex"], Yc=campo["Y"] - geo["ey"])
+    if campo["estado"] == "OK" and campo["contacto"] < CONTACTO_TOTAL:
+        campo["estado"] = "CONTACTO PARCIAL"
+    return campo
+
+
+# Estados de presión que el modelo puede resolver (con contacto parcial se
+# diseña, pero la zapata queda marcada para revisión)
+ESTADOS_RESUELTOS = ("OK", "CONTACTO PARCIAL")
+
+
+def texto_estado(cp):
+    if cp["estado"] == "OK":
+        return "Contacto total"
+    if cp["estado"] == "CONTACTO PARCIAL":
+        return f"CONTACTO PARCIAL ({cp['contacto']:.1f} %)"
+    return {"TRACCION": "TRACCIÓN (P ≤ 0)",
+            "VOLCAMIENTO": "RESULTANTE FUERA DE LA ZAPATA",
+            "NO CONVERGE": "NO CONVERGE"}.get(cp["estado"], cp["estado"])
+
+
 # =============================================================================
 # 3. SOLICITACIONES EN LAS SECCIONES CRÍTICAS
 # =============================================================================
@@ -212,8 +433,9 @@ def _fraccion_mas_alla(U, a, du, lado):
 def momentos_cara(campo, cx, cy):
     """Momento último en la cara de la columna (ACI 13.2.7.1, Tabla 13.2.7.1).
     Mu_x: momento que resisten las barras paralelas a X (voladizo en X, ancho By).
-    Mu_y: momento que resisten las barras paralelas a Y (voladizo en Y, ancho Bx)."""
-    X, Y, q, dA = campo["X"], campo["Y"], campo["q"], campo["dA"]
+    Mu_y: momento que resisten las barras paralelas a Y (voladizo en Y, ancho Bx).
+    Coordenadas medidas desde el eje de la columna y presión neta qu − w."""
+    X, Y, q, dA = campo["Xc"], campo["Yc"], campo["q_net"], campo["dA"]
     Mu_x = Mu_y = 0.0
     for lado in (+1, -1):
         w, b = _fraccion_mas_alla(X, cx / 2.0, campo["du"], lado)
@@ -225,8 +447,8 @@ def momentos_cara(campo, cx, cy):
 
 def cortante_1D(campo, cx, cy, dx, dy):
     """Cortante unidireccional a una distancia d de la cara (ACI 8.4.3.2):
-    resultante de la presión del suelo fuera de la sección crítica."""
-    X, Y, q, dA = campo["X"], campo["Y"], campo["q"], campo["dA"]
+    resultante de la presión neta fuera de la sección crítica."""
+    X, Y, q, dA = campo["Xc"], campo["Yc"], campo["q_net"], campo["dA"]
     Vu_x = Vu_y = 0.0
     for lado in (+1, -1):
         w, _ = _fraccion_mas_alla(X, cx / 2.0 + dx, campo["du"], lado)
@@ -239,8 +461,9 @@ def cortante_1D(campo, cx, cy, dx, dy):
 def punzonamiento(campo, cx, cy, d):
     """Cortante bidireccional en el perímetro crítico a d/2 de las caras
     (ACI 22.6.4.1) con transferencia de momento por excentricidad del
-    cortante (ACI 8.4.4.2). Devuelve el esfuerzo máximo vu [tonf/m²]."""
-    X, Y, q, dA = campo["X"], campo["Y"], campo["q"], campo["dA"]
+    cortante (ACI 8.4.4.2). Devuelve el esfuerzo máximo vu [tonf/m²].
+    Vu = P − ∫(qu − w) dentro del perímetro (el peso propio no se cuenta dos veces)."""
+    X, Y, q, dA = campo["Xc"], campo["Yc"], campo["q_net"], campo["dA"]
     b1, b2 = cx + d, cy + d                  # lados del perímetro crítico
     bo = 2.0 * (b1 + b2)
     wx = np.clip((b1 / 2.0 + campo["du"] / 2.0 - np.abs(X)) / campo["du"], 0, 1)
@@ -329,11 +552,22 @@ def longitud_desarrollo(db_mm):
     return ld / 100.0, ldh / 100.0
 
 
-def aplastamiento(Pu, Bx, By, cx, cy, h):
+def voladizos(geo):
+    """Voladizos medidos desde las caras de la columna [m]: (menor X, mayor X,
+    menor Y, mayor Y). Iguales a ambos lados si la columna está centrada."""
+    vx = (geo["Bx"] - geo["cx"]) / 2.0
+    vy = (geo["By"] - geo["cy"]) / 2.0
+    return (vx - abs(geo["ex"]), vx + abs(geo["ex"]), vy - abs(geo["ey"]), vy + abs(geo["ey"]))
+
+
+def aplastamiento(Pu, geo, h):
     """Resistencia al aplastamiento en el contacto columna-zapata (ACI 22.8.3.2)."""
+    cx, cy = geo["cx"], geo["cy"]
     A1 = cx * cy
-    # √(A2/A1): A2 geométricamente semejante a A1, limitada por la pirámide 1:2
-    k = min(Bx / cx, By / cy, (cx + 4 * h) / cx, (cy + 4 * h) / cy, 2.0)
+    # √(A2/A1): A2 concéntrica y semejante a A1, limitada por la pirámide 1:2 y
+    # por el borde más cercano de la zapata
+    vx_min, _, vy_min, _ = voladizos(geo)
+    k = min((cx + 2 * min(vx_min, 2 * h)) / cx, (cy + 2 * min(vy_min, 2 * h)) / cy, 2.0)
     phiBn_zap = PHI_APLAST * 0.85 * FC * 10.0 * A1 * k
     phiBn_col = PHI_APLAST * 0.85 * FC * 10.0 * A1
     return min(phiBn_zap, phiBn_col)
@@ -374,7 +608,7 @@ def verificar(geo, combos, campos, h, db_mm):
     """Verifica la zapata para un peralte h y un diámetro de barra dados."""
     Bx, By, cx, cy = geo["Bx"], geo["By"], geo["cx"], geo["cy"]
     dbm = db_mm / 1000.0
-    validos = [i for i, c in enumerate(campos) if c["estado"] == "OK"]
+    validos = [i for i, c in enumerate(campos) if c["estado"] in ESTADOS_RESUELTOS]
 
     # --- Flexión: momentos en la cara (independientes de d) -----------------
     Mx_list = [momentos_cara(campos[i], cx, cy) for i in validos]
@@ -398,11 +632,16 @@ def verificar(geo, combos, campos, h, db_mm):
         r["motivo"] = "d < 15 cm (ACI 13.3.1.2)"
         return r
     # Hormigón en masa: si d ≥ voladizo, la sección crítica de cortante (a d de
-    # la cara) queda fuera de la zapata en esa dirección.
-    masa_x = dx >= (Bx - cx) / 2.0
-    masa_y = dy >= (By - cy) / 2.0
+    # la cara) queda fuera de la zapata en esa dirección (se usa el voladizo mayor).
+    _, vx_max, _, vy_max = voladizos(geo)
+    masa_x = dx >= vx_max
+    masa_y = dy >= vy_max
     bloque = masa_x and masa_y
-    r.update(masa_x=masa_x, masa_y=masa_y, bloque=bloque)
+    # El perímetro de punzonamiento a d/2 debe quedar completo dentro de la zapata
+    # (modelo de columna interior); si lo corta un borde, el modelo no aplica.
+    perimetro_ok = ((cx + dm) / 2.0 + abs(geo["ex"]) <= Bx / 2.0 + 1e-9 and
+                    (cy + dm) / 2.0 + abs(geo["ey"]) <= By / 2.0 + 1e-9)
+    r.update(masa_x=masa_x, masa_y=masa_y, bloque=bloque, perimetro_ok=perimetro_ok)
 
     As_min_x = RHO_MIN * By * 100 * h * 100
     As_min_y = RHO_MIN * Bx * 100 * h * 100
@@ -447,10 +686,14 @@ def verificar(geo, combos, campos, h, db_mm):
             DC_punz=pz["vu"] / phi_vc_p, idx=i, bo=pz["bo"]))
     r["detalle"] = detalle
 
-    for clave in ("DC_v1_x", "DC_v1_y", "DC_punz"):
+    # Caso gobernante de cada verificación (se conservan sus solicitaciones)
+    for clave, extra in (("DC_v1_x", ("Vu1_x",)), ("DC_v1_y", ("Vu1_y",)),
+                         ("DC_punz", ("Vu_p", "vu_p"))):
         gob = max(detalle, key=lambda e: e[clave])
         r[clave] = gob[clave]
         r[clave + "_combo"] = gob["Combo"]
+        for k in extra:
+            r[k] = gob[k]
     r["combo_flex_x"] = max(detalle, key=lambda e: e["Mu_x"])["Combo"]
     r["combo_flex_y"] = max(detalle, key=lambda e: e["Mu_y"])["Combo"]
     r["idx_punz"] = max(detalle, key=lambda e: e["DC_punz"])["idx"]
@@ -469,18 +712,25 @@ def verificar(geo, combos, campos, h, db_mm):
         r[clave] = float("nan")
         r[clave + "_combo"] = "No aplica"
 
+    # --- Verificación con la mayor relación D/C (la que gobierna) ------------
+    candidatos = [("Flexión X", r["DC_flex_x"], r["combo_flex_x"]),
+                  ("Flexión Y", r["DC_flex_y"], r["combo_flex_y"]),
+                  ("Cortante 1D X", r["DC_v1_x"], r["DC_v1_x_combo"]),
+                  ("Cortante 1D Y", r["DC_v1_y"], r["DC_v1_y_combo"]),
+                  ("Punzonamiento", r["DC_punz"], r["DC_punz_combo"])]
+    candidatos = [c for c in candidatos if not math.isnan(c[1])]
+    r["gobierna"] = max(candidatos, key=lambda c: c[1])
+
     # --- Criterio de aceptación por resistencia ------------------------------
-    fallas = []
-    if r["DC_flex_x"] > 1.0 or r["DC_flex_y"] > 1.0:
-        fallas.append("flexión")
-    if r["DC_v1_x"] > 1.0 or r["DC_v1_y"] > 1.0:
-        fallas.append("cortante 1D")
-    if r["DC_punz"] > 1.0:
-        fallas.append("punzonamiento")
+    fallas = [f"{nombre} (D/C = {dc:.3f}, {combo})"
+              for nombre, dc, combo in candidatos if dc > 1.0]
+    if not bloque and not perimetro_ok:
+        fallas.append("el perímetro de punzonamiento sale de la zapata (columna de borde: "
+                      "fuera del alcance del modelo de columna interior)")
     if min(bar_x["s"], bar_y["s"]) - dbm < S_LIBRE_MIN:
         fallas.append("espaciamiento libre < 2.5 cm (ACI 25.2.1)")
     r["cumple"] = not fallas
-    r["motivo"] = ", ".join(fallas)
+    r["motivo"] = "; ".join(fallas)
     return r
 
 
@@ -488,25 +738,23 @@ def disenar_zapata(punto, datos):
     """Itera peralte h y diámetro de barra hasta cumplir todas las verificaciones."""
     f0 = datos.iloc[0]
     geo = dict(Bx=float(f0["Bx"]), By=float(f0["By"]),
-               cx=float(f0["Bcx"]), cy=float(f0["Bcy"]))
+               cx=float(f0["Bcx"]), cy=float(f0["Bcy"]),
+               ex=float(f0["ecx"]), ey=float(f0["ecy"]))
     combos = [dict(nombre=f["Load"], P=float(f["FZ"]), Mx=float(f["MX"]),
                    My=float(f["MY"]), Vx=float(f["FX"]), Vy=float(f["FY"]))
               for _, f in datos.iterrows()]
 
     campos = None
     ultimo = None
-    for h in np.arange(H_MIN_PUNTO.get(punto, H_MIN), H_MAX + 1e-9, DH):
+    h_inicial = H_MIN_PUNTO.get(punto, H_MIN)
+    historial = []                      # (h, motivo) de los peraltes que no cumplen
+    for h in np.arange(h_inicial, H_MAX + 1e-9, DH):
         h = round(float(h), 3)
-        # Presiones con los momentos en la base de la zapata. Sin traslado del
-        # cortante no dependen de h y se calculan una sola vez.
-        if campos is None or TRASLADAR_CORTANTE:
-            campos = []
-            for c in combos:
-                Mx_b, My_b = c["Mx"], c["My"]
-                if TRASLADAR_CORTANTE:
-                    Mx_b, My_b = c["Mx"] - c["Vy"] * h, c["My"] + c["Vx"] * h
-                campos.append(presion_contacto(c["P"], Mx_b, My_b, geo["Bx"], geo["By"]))
-        if not any(cp["estado"] == "OK" for cp in campos):
+        # Presiones: dependen de h si se suma el peso propio o se traslada el
+        # cortante; si no, se calculan una sola vez.
+        if campos is None or TRASLADAR_CORTANTE or INCLUIR_PESO_PROPIO:
+            campos = [presiones_combinacion(c, geo, h) for c in combos]
+        if not any(cp["estado"] in ESTADOS_RESUELTOS for cp in campos):
             break
         # Diámetro: el primero de la lista con separación ≥ S_MIN que además se
         # ancla dentro del voladizo. Si ninguno se ancla así, se acepta el primero
@@ -531,26 +779,72 @@ def disenar_zapata(punto, datos):
         # Con el armado elegido, si no cumple resistencia se aumenta el peralte
         if r["cumple"]:
             break
+        historial.append((h, r["motivo"]))
 
+    if ultimo is None:
+        # Ninguna combinación tiene una presión de contacto resoluble
+        r = dict(h=h_inicial, cumple=False, bloque=False,
+                 motivo="ninguna combinación mantiene la resultante dentro de la zapata")
+        campos = [presiones_combinacion(c, geo, h_inicial) for c in combos]
+        ultimo = (r, campos)
     r, campos = ultimo
     if "anclaje" not in r and "bar_x" in r:
         r["anclaje"] = revisar_anclaje(geo, r)
     r["geo"], r["combos"], r["campos"], r["punto"] = geo, combos, campos, punto
     r["estado_combos"] = {c["nombre"]: cp["estado"] for c, cp in zip(combos, campos)}
+    r["resiste"] = r["cumple"]
+
+    # --- Verificación que controla el peralte final --------------------------
+    if r["resiste"]:
+        if historial:
+            h_ant, motivo = historial[-1]
+            r["control_h"] = f"Con h = {h_ant * 100:.0f} cm no cumple: {motivo}"
+        else:
+            r["control_h"] = (f"Peralte inicial de búsqueda ({h_inicial * 100:.0f} cm): "
+                              "cumple todas las verificaciones con el primer h probado")
+    else:
+        r["control_h"] = (f"Sin solución entre h = {h_inicial * 100:.0f} y "
+                          f"{H_MAX * 100:.0f} cm")
+        r["motivo"] = f"{r['control_h']}: {r['motivo']}"
+
+    # --- Control de las combinaciones: pérdida de contacto ------------------
+    fuera = [f"{c['nombre']}: {texto_estado(cp)}" for c, cp in zip(combos, campos)
+             if cp["estado"] not in ESTADOS_RESUELTOS]
+    parcial = [f"{c['nombre']} ({cp['contacto']:.1f} % en contacto)"
+               for c, cp in zip(combos, campos) if cp["estado"] == "CONTACTO PARCIAL"]
+    r["advertencias"] = []
+    if fuera:
+        r["advertencias"].append("Combinaciones fuera del modelo de presiones (no se "
+                                 "verifican): " + "; ".join(fuera))
+    if parcial:
+        r["advertencias"].append("Pérdida de contacto parcial con el suelo en " +
+                                 ", ".join(parcial) + ". Revisar estabilidad y presión "
+                                 "admisible; Bx, By son datos y no se modifican")
+    if not r["resiste"]:
+        r["estado"] = "NO CUMPLE"
+    elif fuera:
+        r["estado"] = "NO CUMPLE"
+        r["motivo"] = "combinaciones fuera del modelo de presiones: " + "; ".join(fuera)
+    elif parcial:
+        r["estado"] = "REVISAR"
+        r["motivo"] = "pérdida de contacto parcial en " + ", ".join(parcial)
+    else:
+        r["estado"] = "CUMPLE"
+    r["cumple"] = r["estado"] == "CUMPLE"
 
     # --- Aplastamiento columna-zapata ---------------------------------------
     Pu_max = max(c["P"] for c in combos)
     r["Pu_max"] = Pu_max
-    r["phiBn"] = aplastamiento(Pu_max, geo["Bx"], geo["By"], geo["cx"], geo["cy"], r["h"])
+    r["phiBn"] = aplastamiento(Pu_max, geo, r["h"])
 
     # --- Acero superior si hay levantamiento (ACI 18.13.2.5) ----------------
-    levanta = any(cp["estado"] != "OK" or cp["contacto"] < 99.99 for cp in campos)
+    levanta = any(cp["estado"] != "OK" for cp in campos)
     r["levantamiento"] = levanta
     r["acero_superior"] = "No requerido (contacto total en todas las combinaciones)"
     if levanta and "bar_x" in r:
         h = r["h"]
         w = 1.2 * (GAMMA_C * h + GAMMA_S * max(DF - h, 0.0))   # peso propio + relleno
-        Lx, Ly = (geo["Bx"] - geo["cx"]) / 2.0, (geo["By"] - geo["cy"]) / 2.0
+        _, Lx, _, Ly = voladizos(geo)
         d_sup = h - REC - r["db"] / 1000.0
         As_tx = max(acero_flexion(w * geo["By"] * Lx ** 2 / 2.0, geo["By"], d_sup) or 0.0,
                     RHO_MIN * geo["By"] * 100 * h * 100)
@@ -569,9 +863,8 @@ def revisar_anclaje(geo, r):
     """Longitud disponible desde la cara de la columna hasta el extremo de la
     barra vs. ld recta o ldh con gancho estándar de 90° (ACI 13.2.8, 25.4)."""
     ld, ldh = longitud_desarrollo(r["db"])
-    disp_x = (geo["Bx"] - geo["cx"]) / 2.0 - REC
-    disp_y = (geo["By"] - geo["cy"]) / 2.0 - REC
-    disp = min(disp_x, disp_y)
+    vx_min, _, vy_min, _ = voladizos(geo)
+    disp = min(vx_min, vy_min) - REC          # voladizo más corto
     if ld <= disp:
         tipo, ok = "Barra recta", True
     elif ldh <= disp:
@@ -589,8 +882,16 @@ def imprimir_zapata(r):
     log("=" * 79)
     log(f" ZAPATA PUNTO {r['punto']}   Bx = {g['Bx']:.2f} m   By = {g['By']:.2f} m   "
         f"Columna {g['cx']*100:.0f} x {g['cy']*100:.0f} cm")
+    if g["ex"] or g["ey"]:
+        log(f" Columna excéntrica: ecx = {g['ex']*100:.1f} cm, ecy = {g['ey']*100:.1f} cm")
     log("=" * 79)
+    if "bar_x" not in r:
+        log(f" *** No fue posible diseñar: {r['motivo']}")
+        for a in r.get("advertencias", []):
+            log(f" ADVERTENCIA: {a}")
+        return
     log(f" Peralte adoptado h = {r['h']*100:.0f} cm,  Ø = {r['db']} mm")
+    log(f" Verificación que controla h: {r['control_h']}")
     db = r["db"] / 10.0
     capa_x = "inferior" if r["dx"] >= r["dy"] else "superior"
     capa_y = "superior" if capa_x == "inferior" else "inferior"
@@ -603,14 +904,19 @@ def imprimir_zapata(r):
     log(f" d promedio = {r['d']*100:.1f} cm   (d ≥ 15 cm ✓)")
     log("")
     log(" 1) PRESIONES DE CONTACTO ÚLTIMAS")
+    cp0 = r["campos"][0]
+    if INCLUIR_PESO_PROPIO:
+        log(f"   Peso propio zapata + relleno: w = {FACTOR_PESO:g}·({GAMMA_C:g}·{r['h']:.2f} + "
+            f"{GAMMA_S:g}·{max(DF - r['h'], 0):.2f}) = {cp0['w']:.3f} t/m²,  "
+            f"W = w·Bx·By = {cp0['W']:.2f} t")
+        log("   qmax incluye W; flexión y cortante usan la presión neta qu − w.")
+    else:
+        log("   Las cargas del Excel ya incluyen el peso propio (no se suma de nuevo).")
     log(f"   {'Combo':<7}{'Pu[t]':>8}{'Mux[t·m]':>10}{'Muy[t·m]':>10}"
         f"{'qmax[t/m²]':>12}{'Contacto%':>11}  Estado")
     for c, cp in zip(r["combos"], r["campos"]):
         log(f"   {c['nombre']:<7}{c['P']:8.2f}{cp['Mx']:10.3f}{cp['My']:10.3f}"
-            f"{cp['q_max']:12.2f}{cp['contacto']:11.1f}  {cp['estado']}")
-    if "bar_x" not in r:
-        log(f"   *** No fue posible diseñar: {r['motivo']}")
-        return
+            f"{cp['q_max']:12.2f}{cp['contacto']:11.1f}  {texto_estado(cp)}")
     log("")
     log(" 2) FLEXIÓN EN LA CARA DE LA COLUMNA (ACI 13.2.7.1)")
     for e, b, Mu, Asr, Asm, bar, pM, et, cmb in (
@@ -636,20 +942,24 @@ def imprimir_zapata(r):
     log(f"   Zapata rectangular: {r['rectangular']}")
     log(f"   Acero superior: {r['acero_superior']}")
     log("")
-    log(f" RESULTADO: {'CUMPLE' if r['cumple'] else 'NO CUMPLE: ' + r['motivo']}")
+    nombre, dc, combo = r["gobierna"]
+    log(f" Verificación gobernante: {nombre}, D/C = {dc:.3f} ({combo})")
+    for a in r["advertencias"]:
+        log(f" ADVERTENCIA: {a}")
+    log(f" RESULTADO: {r['estado']}" + (f": {r['motivo']}" if r["estado"] != "CUMPLE" else ""))
     log("")
 
 
 def imprimir_cortantes(r):
     g = r["geo"]
+    _, vx_max, _, vy_max = voladizos(g)
     log(" 3) CORTANTE UNIDIRECCIONAL a d de la cara (ACI 8.4.3.2, 22.5.5.1c)")
-    for e, B, c, d, masa, rho, vc, phiVc, dc, cmb in (
-            ("X", g["Bx"], g["cx"], r["dx"], r["masa_x"], r["rho_w_x"], r["vc_x"],
-             r["phiVc_x"], r["DC_v1_x"], r["DC_v1_x_combo"]),
-            ("Y", g["By"], g["cy"], r["dy"], r["masa_y"], r["rho_w_y"], r["vc_y"],
-             r["phiVc_y"], r["DC_v1_y"], r["DC_v1_y_combo"])):
-        vol = (B - c) / 2.0
-        log(f"   Dir. {e}: voladizo = ({B:.2f} − {c:.2f})/2 = {vol*100:.1f} cm,  d = {d*100:.1f} cm")
+    for e, vol, d, masa, rho, vc, phiVc, dc, cmb, Vu in (
+            ("X", vx_max, r["dx"], r["masa_x"], r["rho_w_x"], r["vc_x"],
+             r["phiVc_x"], r["DC_v1_x"], r["DC_v1_x_combo"], r["Vu1_x"]),
+            ("Y", vy_max, r["dy"], r["masa_y"], r["rho_w_y"], r["vc_y"],
+             r["phiVc_y"], r["DC_v1_y"], r["DC_v1_y_combo"], r["Vu1_y"])):
+        log(f"   Dir. {e}: voladizo mayor = {vol*100:.1f} cm,  d = {d*100:.1f} cm")
         if masa:
             log(f"           d ≥ voladizo: la sección a d de la cara queda fuera de la zapata.")
             log(f"           No hay cortante en una dirección -> hormigón en masa.")
@@ -657,7 +967,7 @@ def imprimir_cortantes(r):
             log(f"           La sección a d queda {(vol - d)*100:.1f} cm dentro del voladizo.")
             log(f"           ρw = {rho:.5f}, vc = 2.12·λs·ρw^(1/3)·√f'c = {vc:.2f} kg/cm², "
                 f"φVc = {phiVc:.2f} t")
-            log(f"           D/C máx = {dc:.3f} ({cmb})")
+            log(f"           Vu = {Vu:.2f} t ({cmb})  ->  D/C máx = {dc:.3f}")
     log("")
     log(" 4) CORTANTE BIDIRECCIONAL - PUNZONAMIENTO a d/2 (ACI 22.6)")
     if r["bloque"]:
@@ -684,29 +994,34 @@ def figura_zapata(r):
     Usa Figure (sin pyplot) para poder dibujarse también dentro de la interfaz."""
     g = r["geo"]
     campo = r["campos"][r["idx_punz"]]
-    Bx, By, cx, cy = g["Bx"], g["By"], g["cx"], g["cy"]
+    Bx, By, cx, cy, ex, ey = g["Bx"], g["By"], g["cx"], g["cy"], g["ex"], g["ey"]
     fig = Figure(figsize=(13, 6))
     ax1, ax2 = fig.subplots(1, 2, gridspec_kw={"width_ratios": [1.15, 1]})
     # --- Planta ---------------------------------------------------------------
     im = ax1.pcolormesh(campo["X"], campo["Y"], campo["q"], shading="auto", cmap="YlOrRd")
     fig.colorbar(im, ax=ax1, label="qu [tonf/m²]")
     ax1.add_patch(Rectangle((-Bx / 2, -By / 2), Bx, By, fill=False, lw=2, ec="k"))
-    ax1.add_patch(Rectangle((-cx / 2, -cy / 2), cx, cy, fc="0.55", ec="k", lw=1.5))
-    ax1.plot([cx / 2] * 2, [-By / 2, By / 2], "k-", lw=1.2, label="Flexión (cara)")
-    ax1.plot([-cx / 2] * 2, [-By / 2, By / 2], "k-", lw=1.2)
-    ax1.plot([-Bx / 2, Bx / 2], [cy / 2] * 2, "k-", lw=1.2)
-    ax1.plot([-Bx / 2, Bx / 2], [-cy / 2] * 2, "k-", lw=1.2)
+    ax1.add_patch(Rectangle((ex - cx / 2, ey - cy / 2), cx, cy, fc="0.55", ec="k", lw=1.5))
+    ax1.plot([ex + cx / 2] * 2, [-By / 2, By / 2], "k-", lw=1.2, label="Flexión (cara)")
+    ax1.plot([ex - cx / 2] * 2, [-By / 2, By / 2], "k-", lw=1.2)
+    ax1.plot([-Bx / 2, Bx / 2], [ey + cy / 2] * 2, "k-", lw=1.2)
+    ax1.plot([-Bx / 2, Bx / 2], [ey - cy / 2] * 2, "k-", lw=1.2)
     if r.get("bloque"):
         titulo = f"Zapata P{r['punto']} - Hormigón en masa, qu ({campo_nombre(r)})"
     else:
         for s in (+1, -1):
-            ax1.plot([s * (cx / 2 + r["dx"])] * 2, [-By / 2, By / 2], "b--", lw=1.2,
-                     label="Cortante 1D (d)" if s == 1 else None)
-            ax1.plot([-Bx / 2, Bx / 2], [s * (cy / 2 + r["dy"])] * 2, "b--", lw=1.2)
+            xs, ys = ex + s * (cx / 2 + r["dx"]), ey + s * (cy / 2 + r["dy"])
+            if abs(xs) < Bx / 2:
+                ax1.plot([xs] * 2, [-By / 2, By / 2], "b--", lw=1.2,
+                         label="Cortante 1D (d)" if s == 1 else None)
+            if abs(ys) < By / 2:
+                ax1.plot([-Bx / 2, Bx / 2], [ys] * 2, "b--", lw=1.2)
         b1, b2 = cx + r["d"], cy + r["d"]
-        ax1.add_patch(Rectangle((-b1 / 2, -b2 / 2), b1, b2, fill=False, ec="g", lw=2,
+        ax1.add_patch(Rectangle((ex - b1 / 2, ey - b2 / 2), b1, b2, fill=False, ec="g", lw=2,
                                 ls="-.", label="Punzonamiento (d/2)"))
         titulo = f"Zapata P{r['punto']} - Planta y presión qu ({r['DC_punz_combo']})"
+    if r.get("estado") == "REVISAR":
+        titulo += "\nREVISAR: pérdida de contacto parcial"
     ax1.set_aspect("equal")
     ax1.set_xlim(-Bx / 2 * 1.05, Bx / 2 * 1.05)
     ax1.set_ylim(-By / 2 * 1.05, By / 2 * 1.05)
@@ -718,10 +1033,10 @@ def figura_zapata(r):
     # --- Corte A-A (paralelo a X) --------------------------------------------
     h = r["h"]
     ax2.add_patch(Rectangle((-Bx / 2, 0), Bx, h, fc="0.88", ec="k", lw=1.5))
-    ax2.add_patch(Rectangle((-cx / 2, h), cx, 0.5, fc="0.6", ec="k", lw=1.5))
+    ax2.add_patch(Rectangle((ex - cx / 2, h), cx, 0.5, fc="0.6", ec="k", lw=1.5))
     if r.get("bloque"):
         for s in (+1, -1):
-            ax2.plot([s * cx / 2, s * (cx / 2 + h)], [h, 0], "g--", lw=1.3,
+            ax2.plot([ex + s * cx / 2, ex + s * (cx / 2 + h)], [h, 0], "g--", lw=1.3,
                      label="Falla a 45° (sale de la zapata)" if s == 1 else None)
     db = r["db"] / 1000.0
     z_inf_x = REC + db / 2 if r["dx"] >= r["dy"] else REC + 1.5 * db
@@ -790,36 +1105,62 @@ def dc_texto(valor):
     return "No aplica" if math.isnan(valor) else round(valor, 3)
 
 
-def exportar_excel(resultados, ruta):
+def exportar_excel(resultados, ruta, datos=None):
+    """Excel de resultados: Resumen (tabla de entrega), Detalle_Combos (todas las
+    combinaciones), Datos_Entrada (tabla validada) y Parametros."""
     resumen, detalle = [], []
     for r in resultados:
         g = r["geo"]
         fila = {"Punto": r["punto"], "Bx [m]": g["Bx"], "By [m]": g["By"],
                 "Columna [cm]": f"{g['cx']*100:.0f}x{g['cy']*100:.0f}",
-                "h [cm]": r["h"] * 100, "dx [cm]": round(r["dx"] * 100, 1),
-                "dy [cm]": round(r["dy"] * 100, 1), "Pu max [t]": r["Pu_max"],
-                "qu max [t/m²]": round(max(c["q_max"] for c in r["campos"]), 2),
-                "Contacto mín [%]": round(min(c["contacto"] for c in r["campos"]), 1)}
+                "ecx, ecy [cm]": f"{g['ex']*100:g}, {g['ey']*100:g}",
+                "f'c [kg/cm²]": FC, "fy [kg/cm²]": FY, "h [cm]": round(r["h"] * 100, 1)}
         if "bar_x" in r:
+            ok = lambda c: c["estado"] in ESTADOS_RESUELTOS      # noqa: E731
+            validos = [c for c in r["campos"] if ok(c)]
+            pz = "No aplica" if r["bloque"] else None
             fila.update({
-                "Mu x [t·m]": round(r["Mu_x"], 2), "As req x [cm²]": round(r["As_req_x"], 2),
-                "As min x [cm²]": round(r["As_min_x"], 2), "Armado X": texto_armado(r["bar_x"]),
-                "Mu y [t·m]": round(r["Mu_y"], 2), "As req y [cm²]": round(r["As_req_y"], 2),
-                "As min y [cm²]": round(r["As_min_y"], 2), "Armado Y": texto_armado(r["bar_y"]),
-                "D/C flexión X": round(r["DC_flex_x"], 3), "D/C flexión Y": round(r["DC_flex_y"], 3),
-                "D/C cortante 1D X": dc_texto(r["DC_v1_x"]), "D/C cortante 1D Y": dc_texto(r["DC_v1_y"]),
+                "dx [cm]": round(r["dx"] * 100, 1), "dy [cm]": round(r["dy"] * 100, 1),
+                "d prom [cm]": round(r["d"] * 100, 1), "Ø [mm]": r["db"],
+                "Pu max [t]": r["Pu_max"], "W zapata+relleno [t]": round(r["campos"][0]["W"], 2),
+                "qu max [t/m²]": round(max(c["q_max"] for c in validos), 2),
+                "Contacto mín [%]": round(min(c["contacto"] for c in validos), 1),
+                # Flexión
+                "Mu x [t·m]": round(r["Mu_x"], 2), "Combo flexión X": r["combo_flex_x"],
+                "As req x [cm²]": round(r["As_req_x"], 2), "As min x [cm²]": round(r["As_min_x"], 2),
+                "As prov x [cm²]": round(r["bar_x"]["As"], 2), "Armado X": texto_armado(r["bar_x"]),
+                "φMn x [t·m]": round(r["phiMn_x"], 2), "D/C flexión X": round(r["DC_flex_x"], 3),
+                "Mu y [t·m]": round(r["Mu_y"], 2), "Combo flexión Y": r["combo_flex_y"],
+                "As req y [cm²]": round(r["As_req_y"], 2), "As min y [cm²]": round(r["As_min_y"], 2),
+                "As prov y [cm²]": round(r["bar_y"]["As"], 2), "Armado Y": texto_armado(r["bar_y"]),
+                "φMn y [t·m]": round(r["phiMn_y"], 2), "D/C flexión Y": round(r["DC_flex_y"], 3),
+                # Cortante unidireccional
+                "Vu 1D x [t]": "No aplica" if r["masa_x"] else round(r["Vu1_x"], 2),
+                "φVc x [t]": round(r["phiVc_x"], 2), "D/C cortante 1D X": dc_texto(r["DC_v1_x"]),
+                "Combo cortante 1D X": r["DC_v1_x_combo"],
+                "Vu 1D y [t]": "No aplica" if r["masa_y"] else round(r["Vu1_y"], 2),
+                "φVc y [t]": round(r["phiVc_y"], 2), "D/C cortante 1D Y": dc_texto(r["DC_v1_y"]),
+                "Combo cortante 1D Y": r["DC_v1_y_combo"],
+                # Punzonamiento
+                "Vu punz [t]": pz or round(r["Vu_p"], 2),
+                "vu punz [t/m²]": pz or round(r["vu_p"], 2),
+                "φvc punz [t/m²]": round(r["phi_vc_p"], 2),
+                "φVc punz [t]": round(r["phi_vc_p"] * 2 * (g["cx"] + g["cy"] + 2 * r["d"]) * r["d"], 2),
                 "D/C punzonamiento": dc_texto(r["DC_punz"]),
                 "Combo punzonamiento": r["DC_punz_combo"],
                 "Cortante 1D": ("No aplica en X ni Y (hormigón en masa)" if r["bloque"] else
                                 "No aplica en X (hormigón en masa)" if r["masa_x"] else
                                 "No aplica en Y (hormigón en masa)" if r["masa_y"] else
                                 "Se verifica en X e Y"),
+                "Verificación gobernante": f"{r['gobierna'][0]} (D/C = {r['gobierna'][1]:.3f})",
+                "Combinación controlante": r["gobierna"][2],
+                "Controla h": r["control_h"],
                 "Anclaje": r["anclaje"]["tipo"],
                 "Aplastamiento": "CUMPLE" if r["Pu_max"] <= r["phiBn"] else "NO CUMPLE",
-                "Acero superior": r["acero_superior"],
-                "Estado": "CUMPLE" if r["cumple"] else "NO CUMPLE: " + r["motivo"]})
+                "Acero superior": r["acero_superior"]})
             for e in r["detalle"]:
-                d = {"Punto": r["punto"]}
+                d = {"Punto": r["punto"],
+                     "Estado presión": texto_estado(r["campos"][e["idx"]])}
                 d.update({k: (round(v, 4) if isinstance(v, float) else v)
                           for k, v in e.items() if k not in ("idx",)})
                 if r.get("bloque"):
@@ -827,18 +1168,32 @@ def exportar_excel(resultados, ruta):
                               "DC_v1_x", "DC_v1_y", "DC_punz", "bo"):
                         d[k] = "No aplica"
                 detalle.append(d)
+        for c, cp in zip(r["combos"], r["campos"]):
+            if cp["estado"] not in ESTADOS_RESUELTOS or "bar_x" not in r:
+                detalle.append({"Punto": r["punto"], "Estado presión": texto_estado(cp),
+                                "Combo": c["nombre"], "Pu": c["P"], "Mux_base": cp["Mx"],
+                                "Muy_base": cp["My"]})
+        fila["Advertencias"] = " | ".join(r.get("advertencias", [])) or "—"
+        fila["Estado"] = r.get("estado", "NO CUMPLE") + (
+            "" if r.get("estado") == "CUMPLE" else f": {r['motivo']}")
         resumen.append(fila)
     parametros = pd.DataFrame({
         "Parámetro": ["f'c [kg/cm²]", "fy [kg/cm²]", "Recubrimiento [m]", "φ flexión",
                       "φ cortante", "λ", "λs (ACI 13.2.6.2)", "αs", "ρ mínima",
-                      "h mínimo [m]", "Δh [m]", "h inicial por zapata [m]",
-                      "Traslado de cortante V·h", "Malla"],
+                      "h inicial [m]", "h máximo [m]", "Δh [m]", "h inicial por zapata [m]",
+                      "Diámetros [mm]", "Separación mínima [m]",
+                      "Incluir peso propio", "Factor peso propio", "γc [t/m³]", "γs [t/m³]",
+                      "Df [m]", "Traslado de cortante V·h", "Malla"],
         "Valor": [FC, FY, REC, PHI_FLEXION, PHI_CORTE, LAMBDA, LAMBDA_S, ALPHA_S,
-                  RHO_MIN, H_MIN, DH, str(H_MIN_PUNTO) if H_MIN_PUNTO else "—",
+                  RHO_MIN, H_MIN, H_MAX, DH, str(H_MIN_PUNTO) if H_MIN_PUNTO else "—",
+                  ", ".join(map(str, DIAMETROS)), S_MIN,
+                  INCLUIR_PESO_PROPIO, FACTOR_PESO, GAMMA_C, GAMMA_S, DF,
                   TRASLADAR_CORTANTE, f"{N_MALLA}x{N_MALLA}"]})
     with pd.ExcelWriter(ruta, engine="openpyxl") as wr:
         pd.DataFrame(resumen).to_excel(wr, sheet_name="Resumen", index=False)
         pd.DataFrame(detalle).to_excel(wr, sheet_name="Detalle_Combos", index=False)
+        if datos is not None:
+            datos.to_excel(wr, sheet_name="Datos_Entrada", index=False)
         parametros.to_excel(wr, sheet_name="Parametros", index=False)
         for hoja in wr.sheets.values():
             for col in hoja.columns:
@@ -854,13 +1209,17 @@ def main(progreso=None):
     progreso(k, n, punto): función opcional que se llama al terminar cada zapata
     (la usa la interfaz gráfica)."""
     MEMORIA.clear()
-    os.makedirs(CARPETA_SALIDA, exist_ok=True)
+    validar_parametros()
     df = leer_datos(ARCHIVO_EXCEL, HOJA_EXCEL)
+    os.makedirs(CARPETA_SALIDA, exist_ok=True)
     log("DISEÑO DE ZAPATAS AISLADAS - ACI 318-19")
     log(f"Archivo: {os.path.basename(ARCHIVO_EXCEL)}  |  {len(df)} filas, "
         f"{df['Point'].nunique()} zapatas, combinaciones: {', '.join(df['Load'].unique())}")
     log(f"f'c = {FC:.0f} kg/cm²   fy = {FY:.0f} kg/cm²   rec = {REC*100:.1f} cm   "
+        f"h = {H_MIN*100:.0f} a {H_MAX*100:.0f} cm cada {DH*100:.0f} cm   "
         f"traslado V·h = {TRASLADAR_CORTANTE}")
+    log(f"Peso propio de zapata y relleno: "
+        f"{f'incluido (factor {FACTOR_PESO:g}, Df = {DF:g} m)' if INCLUIR_PESO_PROPIO else 'ya incluido en las cargas'}")
     log("")
 
     resultados = []
@@ -888,12 +1247,15 @@ def main(progreso=None):
         dc = np.nanmax([r["DC_flex_x"], r["DC_flex_y"], r["DC_v1_x"], r["DC_v1_y"], r["DC_punz"]])
         log(f" {r['punto']:<4}{r['geo']['Bx']:>5.2f}x{r['geo']['By']:<4.2f}{r['h']*100:>7.0f}  "
             f"{texto_armado(r['bar_x']):<22}{texto_armado(r['bar_y']):<22}{dc:8.3f}  "
-            f"{'CUMPLE' if r['cumple'] else 'NO CUMPLE'}"
+            f"{r['estado']}"
             f"{'  (hormigón en masa)' if r['bloque'] else ''}")
+    for r in resultados:
+        for a in r.get("advertencias", []):
+            log(f" P{r['punto']}: {a}")
 
     graficar_resumen([r for r in resultados if "bar_x" in r],
                      os.path.join(CARPETA_SALIDA, "Resumen_Demanda_Capacidad.png"))
-    exportar_excel(resultados, os.path.join(CARPETA_SALIDA, "Resultados_Zapatas.xlsx"))
+    exportar_excel(resultados, os.path.join(CARPETA_SALIDA, "Resultados_Zapatas.xlsx"), df)
     with open(os.path.join(CARPETA_SALIDA, "Memoria_Calculo.txt"), "w", encoding="utf-8") as f:
         f.write("\n".join(MEMORIA))
     print(f"\nResultados guardados en: {CARPETA_SALIDA}")
@@ -901,4 +1263,8 @@ def main(progreso=None):
 
 
 if __name__ == "__main__":
-    resultados = main()
+    try:
+        resultados = main()
+    except ErrorDatos as error:
+        print(f"\n*** {error}")
+        raise SystemExit(1)

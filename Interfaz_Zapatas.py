@@ -51,6 +51,7 @@ PARAMETROS = [
 AZUL = "#1F3A5F"
 COLOR_OK = "#E8F5E9"
 COLOR_MASA = "#E3F2FD"
+COLOR_REVISAR = "#FFF8E1"
 COLOR_FALLA = "#FDECEA"
 
 
@@ -109,6 +110,7 @@ class AplicacionZapatas:
         self.valores_iniciales = {p[0]: getattr(dz, p[0]) for p in PARAMETROS}
         self.valores_iniciales["H_MIN_PUNTO"] = dict(dz.H_MIN_PUNTO)
         self.valores_iniciales["TRASLADAR_CORTANTE"] = dz.TRASLADAR_CORTANTE
+        self.valores_iniciales["INCLUIR_PESO_PROPIO"] = dz.INCLUIR_PESO_PROPIO
 
         self._estilos()
         self._construir()
@@ -199,16 +201,22 @@ class AplicacionZapatas:
         # --- Opciones -------------------------------------------------------
         f = ttk.LabelFrame(p, text="3. Opciones", style="Seccion.TLabelframe", padding=8)
         f.pack(fill="x", pady=(0, 8))
-        ttk.Label(f, text="Peralte inicial por zapata").grid(row=0, column=0, sticky="w")
+        ttk.Label(f, text="Peralte inicial por zapata (opcional)").grid(row=0, column=0, sticky="w")
         self.var_h_puntos = tk.StringVar()
         ttk.Entry(f, textvariable=self.var_h_puntos).grid(row=1, column=0, sticky="ew")
-        ttk.Label(f, text="Formato zapata:h[cm], ej. 1:40, 2:40", style="Nota.TLabel").grid(
+        ttk.Label(f, text="Formato zapata:h[cm], ej. 1:45, 2:45", style="Nota.TLabel").grid(
             row=2, column=0, sticky="w")
+        self.var_peso = tk.BooleanVar()
+        ttk.Checkbutton(f, text="Sumar peso propio de zapata y relleno",
+                        variable=self.var_peso).grid(row=3, column=0, sticky="w", pady=(6, 0))
+        ttk.Label(f, text="Si las cargas no lo incluyen. Se recalcula con cada h; flexión y "
+                  "cortante usan la presión neta qu − w", style="Nota.TLabel",
+                  wraplength=self.px(290)).grid(row=4, column=0, sticky="w")
         self.var_traslado = tk.BooleanVar()
         ttk.Checkbutton(f, text="Trasladar cortantes FX, FY a la base (V·h)",
-                        variable=self.var_traslado).grid(row=3, column=0, sticky="w", pady=(6, 0))
+                        variable=self.var_traslado).grid(row=5, column=0, sticky="w", pady=(6, 0))
         ttk.Label(f, text="Desactivado: las cadenas toman el cortante (criterio de clase)",
-                  style="Nota.TLabel", wraplength=self.px(290)).grid(row=4, column=0, sticky="w")
+                  style="Nota.TLabel", wraplength=self.px(290)).grid(row=6, column=0, sticky="w")
         f.columnconfigure(0, weight=1)
 
         # --- Acciones -------------------------------------------------------
@@ -287,11 +295,13 @@ class AplicacionZapatas:
         marco.pack(fill="both", expand=True)
         self.tabla_resumen.tag_configure("ok", background=COLOR_OK)
         self.tabla_resumen.tag_configure("masa", background=COLOR_MASA)
+        self.tabla_resumen.tag_configure("revisar", background=COLOR_REVISAR)
         self.tabla_resumen.tag_configure("falla", background=COLOR_FALLA)
         self.tabla_resumen.bind("<Double-1>", self._abrir_desde_resumen)
         leyenda = ttk.Frame(tab)
         leyenda.pack(anchor="w", pady=(6, 0))
         for color, texto in ((COLOR_OK, "Cumple"), (COLOR_MASA, "Cumple — hormigón en masa"),
+                             (COLOR_REVISAR, "Revisar — pérdida de contacto"),
                              (COLOR_FALLA, "No cumple")):
             tk.Label(leyenda, width=2, background=color, relief="solid", borderwidth=1).pack(side="left")
             ttk.Label(leyenda, text=f" {texto}    ", style="Sub.TLabel").pack(side="left")
@@ -391,6 +401,7 @@ class AplicacionZapatas:
         self.var_h_puntos.set(", ".join(f"{k}:{v * 100:g}" for k, v in
                                         self.valores_iniciales["H_MIN_PUNTO"].items()))
         self.var_traslado.set(self.valores_iniciales["TRASLADAR_CORTANTE"])
+        self.var_peso.set(self.valores_iniciales["INCLUIR_PESO_PROPIO"])
 
     def _leer_parametros(self):
         """Lee y valida la ventana. Devuelve {variable del programa: valor}."""
@@ -419,6 +430,7 @@ class AplicacionZapatas:
                                  "zapata:h[cm], por ejemplo 1:40, 2:40.")
         valores["H_MIN_PUNTO"] = h_puntos
         valores["TRASLADAR_CORTANTE"] = self.var_traslado.get()
+        valores["INCLUIR_PESO_PROPIO"] = self.var_peso.get()
         excel = self.var_excel.get()
         if not os.path.isfile(excel):
             raise ValueError("No se encontró el archivo Excel de entrada.")
@@ -452,6 +464,8 @@ class AplicacionZapatas:
         try:
             res = dz.main(progreso=lambda k, n, p: self.cola.put(("progreso", k, n, p)))
             self.cola.put(("fin", res))
+        except dz.ErrorDatos as error:
+            self.cola.put(("error", str(error)))
         except PermissionError as error:
             self.cola.put(("error", "No se pudieron guardar los resultados. Si el archivo "
                                     "Resultados_Zapatas.xlsx está abierto en Excel, ciérrelo y "
@@ -488,18 +502,20 @@ class AplicacionZapatas:
         self.resultados = resultados
         arbol = self.tabla_resumen
         arbol.delete(*arbol.get_children())
-        n_ok = n_masa = 0
+        n_ok = n_masa = n_revisar = 0
         for r in resultados:
             if "bar_x" not in r:
                 arbol.insert("", "end", iid=str(r["punto"]), tags=("falla",),
                              values=(f"P{r['punto']}", "", "", "", "", "", "", "", "",
-                                     f"NO DISEÑADA: {r['motivo']}"))
+                                     f"NO CUMPLE: {r['motivo']}"))
                 continue
             g = r["geo"]
             masa = r["bloque"]
-            n_ok += r["cumple"]
+            n_ok += r["estado"] == "CUMPLE"
+            n_revisar += r["estado"] == "REVISAR"
             n_masa += masa
-            etiqueta = "falla" if not r["cumple"] else ("masa" if masa else "ok")
+            etiqueta = {"CUMPLE": "masa" if masa else "ok", "REVISAR": "revisar"}.get(
+                r["estado"], "falla")
             arbol.insert("", "end", iid=str(r["punto"]), tags=(etiqueta,), values=(
                 f"P{r['punto']}", f"{g['Bx']:.2f} × {g['By']:.2f}", f"{r['h'] * 100:.0f}",
                 dz.texto_armado(r["bar_x"]), dz.texto_armado(r["bar_y"]),
@@ -507,11 +523,12 @@ class AplicacionZapatas:
                 formato_dc(maximo_valido(r["DC_v1_x"], r["DC_v1_y"])),
                 formato_dc(r["DC_punz"]),
                 "Hormigón en masa" if masa else "Zapata flexible",
-                "CUMPLE" if r["cumple"] else "NO CUMPLE"))
+                r["estado"]))
         total = len(resultados)
         self.var_info_resumen.set(
-            f"{total} zapatas diseñadas  ·  {n_ok} cumplen  ·  {n_masa} trabajan como hormigón en "
-            f"masa  ·  f'c = {dz.FC:g} kg/cm², fy = {dz.FY:g} kg/cm², rec = {dz.REC * 100:g} cm")
+            f"{total} zapatas diseñadas  ·  {n_ok} cumplen  ·  {n_revisar} para revisar (pérdida "
+            f"de contacto)  ·  {n_masa} trabajan como hormigón en masa  ·  f'c = {dz.FC:g} kg/cm², "
+            f"fy = {dz.FY:g} kg/cm², rec = {dz.REC * 100:g} cm")
 
         disenadas = [r for r in resultados if "bar_x" in r]
         self.combo_zapata["values"] = [f"P{r['punto']}" for r in disenadas]
@@ -556,7 +573,7 @@ class AplicacionZapatas:
         self.var_info_zapata.set(
             f"{g['Bx']:.2f} × {g['By']:.2f} m  ·  columna {g['cx'] * 100:.0f} × {g['cy'] * 100:.0f} cm  ·  "
             f"h = {r['h'] * 100:.0f} cm  ·  {'hormigón en masa' if r['bloque'] else 'zapata flexible'}"
-            f"  ·  {'CUMPLE' if r['cumple'] else 'NO CUMPLE'}")
+            f"  ·  {r['estado']}")
 
     def _mostrar_dc(self, disenadas):
         self.canvas_resumen = self._incrustar(dz.figura_resumen(disenadas), self.marco_dc)
