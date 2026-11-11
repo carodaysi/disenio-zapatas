@@ -1,5 +1,5 @@
-# Contraste del programa con el Excel de clase (hoja "Empotrado Art",
-# video 23/10/2026, 3:29:59 y 4:00:00). Datos leídos de la pantalla.
+# Contraste del programa con el Excel desarrollado en clase (hoja "Empotrado Art").
+# Cargas, dimensiones y resultados de la hoja para las zapatas P3 a P7.
 # Uso: python comparar_excel_clase.py  (escribe Datos_Excel_Clase.xlsx en esta carpeta)
 import os
 import sys
@@ -29,7 +29,7 @@ CARGAS = {
                      ("DCON3", 78.0, 0.0, -1.3), ("DCON4", 237.5, 0.0, 1.2),
                      ("DCON5", 175.5, 2.3, 0.0), ("DCON6", 140.1, -2.3, 0.0)]),
 }
-# Resultados del Excel de clase (versión final, 4:00:00)
+# Resultados de la hoja de clase
 EXCEL = {
     3: dict(Mu_x=20.10, Mu_y=22.91, n=17, db=14, As_min=16.20, As=26.17, d=37.5,
             phiMn=35.83, Vu_x=26.05, Vu_y=29.22, phiVc=29.60, Vu_p=100.98, bo=370,

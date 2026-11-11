@@ -60,7 +60,7 @@ clase. Puede usarse con una **interfaz gráfica de escritorio**, como **aplicaci
 ├── app.py                             # Versión web (Streamlit)
 ├── .streamlit/config.toml             # Tema y límite de tamaño de archivos de la versión web
 ├── InputData01.xlsx                   # Datos de entrada (hoja "Tarea1")
-├── Validacion_Excel_Clase/            # Contraste con el Excel de clase (script, datos, capturas)
+├── Validacion_Excel_Clase/            # Contraste con el Excel de clase (script, datos y resultado)
 ├── generar_informe_pdf.py             # Genera el PDF de entrega de la Tarea 01
 ├── Explicacion_Programa_Zapatas.docx  # Documento que explica el programa paso a paso
 ├── requirements.txt                   # Dependencias (pip)
@@ -353,7 +353,7 @@ desarrollado en clase (zapatas P3 a P7, mismas reacciones DCON). Ejecutar
 | P7 (3.00 m) | 65 | 21 Ø16 | 42.22 | 89.13 | 53.57 | 204.17 (204.18) |
 
 En P7 el Excel usa Ø16, elegido a mano; se reproduce con `DIAMETRO_PUNTO = {7: 16}`. Las
-diferencias en Vu vienen de que las cargas del Excel se transcribieron con un decimal.
+diferencias en Vu vienen de que las cargas de la hoja se tomaron con un decimal.
 
 ## Hipótesis y limitaciones
 

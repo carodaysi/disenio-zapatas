@@ -113,7 +113,7 @@ n_cumple = int((res["Estado"] == "CUMPLE").sum())
 n_revisar = int(res["Estado"].astype(str).str.startswith("REVISAR").sum())
 
 # ------------------------------------------- contraste con el Excel de clase
-# Valores leídos de la hoja "Empotrado Art" (clase del 23/10/2026, 3:29:59 y 4:00:00)
+# Valores de la hoja "Empotrado Art" del Excel de clase
 EXCEL = {
     4: dict(h=0.50, Mu_x=22.37, Mu_y=24.64, n=16, As_min=17.60, As=24.63, d=42.5, phiMn=38.40,
             Vu_x=26.35, Vu_y=28.89, phiVc=30.65, Vu_p=114.78, bo=390),
@@ -141,7 +141,7 @@ for p, e in EXCEL.items():
     CONTRASTE[p] = dict(rv=rv, rf=rf, B=B, phiMn_e=phiMn_e, phiVc_e=phiVc_e)
 
 # Criterio CLASE: el programa itera h y armado con las hipótesis del Excel, usando
-# los datos transcritos de la hoja de clase (P3–P7, Validacion_Excel_Clase)
+# los datos de la hoja de clase (P3–P7, Validacion_Excel_Clase)
 EXCEL_CLASE = {3: (2.40, 45, 14, 17, 26.17, 35.83, 29.60, 100.98),
                4: (2.30, 50, 14, 16, 24.63, 38.40, 30.65, 114.78),
                5: (2.10, 45, 14, 15, 23.09, 31.60, 25.97, 94.62),
@@ -300,7 +300,7 @@ S.append(P("Criterio de aceptación: CUMPLE si todos los D/C ≤ 1 y todas las c
 S.append(P("4. Contraste con el Excel de clase", "h1"))
 S.append(P(
     "Se usó la hoja <i>Empotrado Art</i> del archivo <i>Dimensionamiento.xlsx</i> desarrollado en "
-    "clase (23/10/2026). Parte de las mismas reacciones DCON del modelo ETABS; las zapatas P4, P5 y P6 "
+    "clase. Parte de las mismas reacciones DCON del modelo ETABS; las zapatas P4, P5 y P6 "
     "tienen el mismo B que en la tarea (2.30, 2.10 y 2.60 m), por lo que el contraste es directo. "
     "El programa se evaluó con el mismo h y la misma barra Ø14 del Excel; las magnitudes por "
     "combinación corresponden a la combinación que gobierna (DCON5 en P5, DCON4 en P6)."))
